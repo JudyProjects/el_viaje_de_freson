@@ -15,6 +15,9 @@ function _init()
 
 	--setup chorro
 	ch1 = make_chorro()
+	camx = 0
+	camy = 0
+	actual = rndscreen(nil, nil)
 end
 
 function _draw()
@@ -45,7 +48,95 @@ function _update()
 			del(ladridos, l)
 		end
 	end
+
+	cls(5)
+	--camx=(x\128)*128
+	--camy=(y\128)*128
+
+	--dibujar pantalla
+	for i = 0, 255 do
+		local tx = i * 16 * 8
+		local ty = i \ 16 * 8
+		spr(actual.cont[i + 1], tx, ty)
+	end
+
+	--cambio de pantalla
+	local dir = nil
+	if (x < -4) then
+		--izq
+		dir = "l"
+	elseif (x > 124) then
+		--der
+		dir = "r"
+	end
+
+	if (y < -4) then
+		--arriba
+		dir = "u"
+	elseif (y > 124) then
+		--abajo
+		dir = "d"
+	end
+
+	if dir != nil then
+		local sig = actual[dir]
+
+		if (sig == nil) then
+			actual[dir] = rndscreen(actual, dir)
+			sig = actual[dir]
+		end
+		actual = sig
+	end
+
+	--posicion
+	if dir == "l" or dir == "r" then
+		if (x < 0) then
+			x = 124
+		elseif x > 124 then
+			x = -4
+		end
+	else
+		if (y < 0) then
+			y = 124
+		elseif y > 124 then
+			y = -4
+		end
+	end
+
+	--camera(camx,camy)
+	--map()
+	spr(s, x, y, 2, 2)
 end
+
+function rndscreen(ant, dir)
+	local pantalla = {}
+
+	pantalla.u = nil
+	pantalla.d = nil
+	pantalla.l = nil
+	pantalla.r = nil
+
+	local dirs = {
+		r = "l",
+		l = "r",
+		u = "d",
+		d = "u"
+	}
+
+	if (dir != nil) then
+		pantalla[dirs[dir]] = ant
+	end
+
+	pantalla.cont = {}
+	local sprites = { 65, 66, 69 }
+
+	for i = 1, 256 do
+		add(pantalla.cont, rnd(sprites))
+	end
+
+	return pantalla
+end
+
 -->8
 -- entidades
 function make_entity()
