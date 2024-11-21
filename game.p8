@@ -17,22 +17,14 @@ function _init()
 	ch1 = make_chorro()
 
 	-- Variables de pantalla y cれくmara
-    camx = 0
-    camy = 0
-    pantallas = {}
-    pantx, panty = 0, 0
-
-    -- Crear la primera pantalla
-    pantallas[coord_key(pantx, panty)] = rndscreen(nil, nil)
-    actual = pantallas[coord_key(pantx, panty)]
+    
 end
 
 function _draw()
 	cls()
-
 	-- Actualizar cれくmara segれむn la posiciれはn del jugador
-    camx = pantx * 128
-    camy = panty * 128
+	camx = flr(jug.x \ 128) * 128
+    camy = flr(jug.y \ 128) * 128
     camera(camx, camy)
 
     -- Dibujar el mapa actual
@@ -63,76 +55,12 @@ function _update()
 		end
 	end
 
-	cambiar_pantalla()
-end
-
--- Funciれはn para cambiar de pantalla basado en la posiciれはn del jugador
-function cambiar_pantalla()
-    local dir = nil
-
-    if (jug.x < -8) then
-        -- izquierda
-        dir = "l"
-        pantx -= 1
-        jug.x = 120
-    elseif (jug.x > 128) then
-        -- derecha
-        dir = "r"
-        pantx += 1
-        jug.x = 0
-    elseif (jug.y < -8) then
-        -- arriba
-        dir = "u"
-        panty -= 1
-        jug.y = 120
-    elseif (jug.y > 128) then
-        -- abajo
-        dir = "d"
-        panty += 1
-        jug.y = 0
-    end
-
-    if dir != nil then
-        local key = coord_key(pantx, panty)
-        if pantallas[key] == nil then
-            pantallas[key] = rndscreen(actual, dir)
-        end
-        actual = pantallas[key]
-    end
+	
 end
 
 -- Funciれはn para generar una clave れむnica para cada pantalla usando coordenadas
 function coord_key(x, y)
     return x .. "," .. y
-end
-
-function rndscreen(ant, dir)
-	local pantalla = {}
-
-	pantalla.u = nil
-	pantalla.d = nil
-	pantalla.l = nil
-	pantalla.r = nil
-
-	local dirs = {
-		r = "l",
-		l = "r",
-		u = "d",
-		d = "u"
-	}
-
-	if (dir != nil) then
-		pantalla[dirs[dir]] = ant
-	end
-
-	--[[ pantalla.cont = {}
-	local sprites = { 65, 66, 69 }
-
-	for i = 1, 256 do
-		add(pantalla.cont, rnd(sprites))
-	end ]]
-
-	return pantalla
 end
 
 -->8
@@ -189,6 +117,7 @@ function make_freson()
 		if btnp(❎) and #ladridos < 1 then
 			make_ladrido()
 		end
+		printh(e.x.. " , "..e.y)
 	end
 
 	e.drw = function()
@@ -202,7 +131,7 @@ function make_freson()
 		palt(0, false)
 		palt(11, true)
 		--dibujar freson
-		spr(sps[flr(e.s)], e.x - camx + 8, e.y - camy, 2, 2, e.fh)
+		spr(sps[flr(e.s)], e.x + 8, e.y , 2, 2, e.fh)
 		palt()
 	end
 
