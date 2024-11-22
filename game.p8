@@ -5,224 +5,227 @@ __lua__
 -- festino a., sancristobal f.
 
 function _init()
-  printh("== == ==")
-  printh("iniciando juego")
-  cnt = 0
-  debug = false
+    printh("== == ==")
+    printh("iniciando juego")
+    cnt = 0
+    debug = false
 
-  estado = "inicio"
-  tblestados = {
-      inicio = {
-          ini = ini_ini,
-          upd = ini_upd,
-          drw = ini_drw
-      },
-      juego = {
-          ini = jug_ini,
-          upd = jug_upd,
-          drw = jug_drw
-      },
-      fin = {
-          ini = fin_ini,
-          upd = fin_upd,
-          drw = fin_drw
-      }
-  }
-  chgestado(estado)
+    estado = "inicio"
+    tblestados = {
+        inicio = {
+            ini = ini_ini,
+            upd = ini_upd,
+            drw = ini_drw
+        },
+        juego = {
+            ini = jug_ini,
+            upd = jug_upd,
+            drw = jug_drw
+        },
+        fin = {
+            ini = fin_ini,
+            upd = fin_upd,
+            drw = fin_drw
+        }
+    }
+    chgestado(estado)
 end
 
 function chgestado(est)
-  estado = est
+    estado = est
 
-  tblestados[estado].ini()
-  _update = tblestados[estado].upd
-  _draw = tblestados[estado].drw
+    tblestados[estado].ini()
+    _update = tblestados[estado].upd
+    _draw = tblestados[estado].drw
 end
 
 function dist(x0, y0, x1, y1, radio)
-  local puntoJug, puntoEnt = (x0 - x1) ^ 2, (y0 - y1) ^ 2
-  return radio ^ 2 <= puntoJug + puntoEnt
+    local puntoJug, puntoEnt = (x0 - x1) ^ 2, (y0 - y1) ^ 2
+    return radio ^ 2 <= puntoJug + puntoEnt
 end
 
 function ini_ini()
-  -- capa de fondo
-  ini_bosque()
+    -- capa de fondo
+    ini_bosque()
 
-  i_tmp = 30
+    i_tmp = 30
 end
 
 function ini_upd()
-  if (i_tmp > 0) i_tmp -= 1
-  if (i_tmp <= 0) then
-      if (btn(❎) and btn(🅾️)) then
-          chgestado("juego")
-      end
-  end
+    if (i_tmp > 0) i_tmp -= 1
+    if (i_tmp <= 0) then
+        if (btn(❎) and btn(🅾️)) then
+            chgestado("juego")
+        end
+    end
 end
 
 function ini_drw()
-  cls()
+    cls()
 
-  drw_bosque()
-
-  --insertar sprite logo
-
-  if (i_tmp <= 0) then
-      print("\#8\f7❎+🅾️ para empezar", 29, 122)
-  end
+    drw_bosque()
+    palt(0, false)
+    palt(10, true)
+    spr(132, 63 - 16, 33 - 16, 4, 4)
+    spr(128, 63 - 16, 63 - 16, 4, 4)
+    palt()
+    if (i_tmp <= 0) then
+        print("\#9\f7❎+🅾️ para empezar", 29, 122)
+    end
+    cnt = 0
 end
 
 function jug_ini()
-  ents = {}
-  chorros = {}
-  ladridos = {}
-  hambre = 100
+    ents = {}
+    chorros = {}
+    ladridos = {}
+    hambre = 100
 
-  --setup jugador
-  jug = make_freson()
+    --setup jugador
+    jug = make_freson()
 
-  --setup chorro
-  ini_enemigos(1)
+    --setup chorro
+    ini_enemigos(1)
 end
 
 function jug_upd()
-  cnt += 1
-  for e in all(ents) do
-      e.upd()
-  end
+    cnt += 1
+    for e in all(ents) do
+        e.upd()
+    end
 
-  for l in all(ladridos) do
-      l.r1 += 2 -- el circulo exterior crece
-      l.r2 += 1 -- el circulo interior crece mas lento
+    for l in all(ladridos) do
+        l.r1 += 2 -- el circulo exterior crece
+        l.r2 += 1 -- el circulo interior crece mas lento
 
-      -- eliminar ladrido cuando el circulo exterior supera tamanio
-      if l.r1 > 30 then
-          del(ladridos, l)
-      end
-  end
+        -- eliminar ladrido cuando el circulo exterior supera tamanio
+        if l.r1 > 30 then
+            del(ladridos, l)
+        end
+    end
 end
 
 function jug_drw()
-  cls()
+    cls()
 
-  for e in all(ents) do
-      e.drw()
-  end
+    for e in all(ents) do
+        e.drw()
+    end
 
-  for l in all(ladridos) do
-      circ(jug.x + 16, jug.y + 8, l.r1, 7) -- circulo exterior
-      circ(jug.x + 16, jug.y + 8, l.r2, 7) -- circulo interior
-  end
+    for l in all(ladridos) do
+        circ(jug.x + 16, jug.y + 8, l.r1, 7) -- circulo exterior
+        circ(jug.x + 16, jug.y + 8, l.r2, 7) -- circulo interior
+    end
 end
 
 function fin_ini()
-  f_msg = "\#3\f7fin del juego"
-  f_mx = 63 - 26
-  f_my = 58
+    f_msg = "\#3\f7fin del juego"
+    f_mx = 63 - 26
+    f_my = 58
 
-  if (jug.hambre <= 0) then
-      f_msg = "\#8\f7\^w\^perdiste"
-      f_mx = 31
-  end
+    if (jug.hambre <= 0) then
+        f_msg = "\#8\f7\^w\^perdiste"
+        f_mx = 31
+    end
 end
 
 function fin_upd()
-  jug_upd()
+    jug_upd()
 
-  if btn(❎) and btn(🅾️) then
-      chgestado("inicio")
-  end
+    if btn(❎) and btn(🅾️) then
+        chgestado("inicio")
+    end
 end
 
 function fin_drw()
-  jug_drw()
+    jug_drw()
 
-  print(f_msg, f_mx, f_my)
-  print("\#e\f1❎+🅾️ para volver", 33, 122)
+    print(f_msg, f_mx, f_my)
+    print("\#e\f1❎+🅾️ para volver", 33, 122)
 end
 -->8
 -- entidades
 function make_entity()
-  local e = {}
-  e.x = 0
-  e.y = 0
-  e.s = 0
-  e.dx = 0
-  e.dy = 0
-  e.fr = nil
-  e.stat = nil
+    local e = {}
+    e.x = 0
+    e.y = 0
+    e.s = 0
+    e.dx = 0
+    e.dy = 0
+    e.fr = nil
+    e.stat = nil
 
-  add(ents, e)
-  return e
+    add(ents, e)
+    return e
 end
 
 -- freson
 function make_freson()
-  local e = make_entity()
-  e.s = 1
-  e.fh = true
-  e.fr = {
-    walk = { 1, 3, 5 },
-    idle = { 1 }
-  }
+    local e = make_entity()
+    e.s = 1
+    e.fh = true
+    e.fr = {
+        walk = { 1, 3, 5 },
+        idle = { 1 }
+    }
 
-  local idle = "idle"
-  local walk = "walk"
-  e.stat = idle
-
-  local velfreson = 1.25
-
-  e.upd = function()
+    local idle = "idle"
+    local walk = "walk"
     e.stat = idle
-    e.dx = 0
-    if btn(⬅️) then
-        e.fh = false
-        e.stat = walk
-        e.dx = -velfreson
+
+    local velfreson = 1.25
+
+    e.upd = function()
+        e.stat = idle
+        e.dx = 0
+        if btn(⬅️) then
+            e.fh = false
+            e.stat = walk
+            e.dx = -velfreson
+        end
+
+        if btn(➡️) then
+            e.fh = true
+            e.stat = walk
+            e.dx = velfreson
+        end
+
+        if (btn(⬆️)) e.y -= 1
+        if (btn(⬇️)) e.y += 1
+        e.x += e.dx
+
+        if btnp(❎) and #ladridos < 1 then
+            make_ladrido()
+        end
     end
 
-    if btn(➡️) then
-        e.fh = true
-        e.stat = walk
-        e.dx = velfreson
+    e.drw = function()
+        local sps = e.fr[e.stat]
+        e.s += .30
+
+        if flr(e.s) > #sps then
+            e.s = 1
+        end
+        --fondo transparente
+        palt(0, false)
+        palt(11, true)
+        --dibujar freson
+        spr(sps[flr(e.s)], e.x + 8, e.y, 2, 2, e.fh)
+        palt()
     end
 
-    if (btn(⬆️)) e.y -= 1
-    if (btn(⬇️)) e.y += 1
-    e.x += e.dx
-
-    if btnp(❎) and #ladridos < 1 then
-        make_ladrido()
-    end
-  end
-
-  e.drw = function()
-    local sps = e.fr[e.stat]
-    e.s += .30
-
-    if flr(e.s) > #sps then
-        e.s = 1
-    end
-    --fondo transparente
-    palt(0, false)
-    palt(11, true)
-    --dibujar freson
-    spr(sps[flr(e.s)], e.x + 8, e.y, 2, 2, e.fh)
-    palt()
-  end
-
-  return e
+    return e
 end
 
 -- funcion para crear un ladrido (ondas concentricas)
 function make_ladrido()
-  hambre -= 5
-  local l = {}
-  -- radio del circulo exterior
-  l.r1 = 5
-  -- radio del circulo interior
-  l.r2 = 3
-  add(ladridos, l)
+    hambre -= 5
+    local l = {}
+    -- radio del circulo exterior
+    l.r1 = 5
+    -- radio del circulo interior
+    l.r2 = 3
+    add(ladridos, l)
 end
 
 -- chorro
@@ -231,8 +234,8 @@ function make_chorro()
     e.s = 33
     e.fh = false
     e.fr = {
-      walk = { 33 },
-      idle = { 33 }
+        walk = { 33 },
+        idle = { 33 }
     }
 
     local idle = "idle"
@@ -242,44 +245,44 @@ function make_chorro()
     local velchorro = 1.5
 
     e.upd = function()
-       if (e.stat != "idle") then
-         e.stat = walk
-         if (e.x < jug.x) e.dx -= velchorro if (e.x > jug.x) e.dx += velchorro if (e.y > jug.y) e.dy -= velchorro if (e.y < jug.y) e.dy += velchorro e.x += e.dx
-         e.y += e.dy
-       elseif (stun > 0) then
-         stun -= 1
-      	end
+        if (e.stat != "idle") then
+            e.stat = walk
+            if (e.x < jug.x) e.dx -= velchorro if (e.x > jug.x) e.dx += velchorro if (e.y > jug.y) e.dy -= velchorro if (e.y < jug.y) e.dy += velchorro e.x += e.dx
+            e.y += e.dy
+        elseif (stun > 0) then
+            stun -= 1
+        end
 
-       for l in all(ladridos) do
-          if dist(jug.x, jug.y, e.x, e.y, l.r2) then
-              e.stat = idle
-              stun = 30
-          end
-       end
+        for l in all(ladridos) do
+            if dist(jug.x, jug.y, e.x, e.y, l.r2) then
+                e.stat = idle
+                stun = 30
+            end
+        end
     end
 
-  e.drw = function()
-    local sps = e.fr[e.stat]
-    e.s += .15
+    e.drw = function()
+        local sps = e.fr[e.stat]
+        e.s += .15
 
-    if flr(e.s) > #sps then
-        e.s = 1
+        if flr(e.s) > #sps then
+            e.s = 1
+        end
+        --fondo transparente
+        palt(0, false)
+        palt(11, true)
+        --dibujar chorro
+        spr(
+            sps[flr(e.s)],
+            e.x + 78,
+            e.y,
+            2, 2,
+            e.fh
+        )
+        palt()
     end
-    --fondo transparente
-    palt(0, false)
-    palt(11, true)
-    --dibujar chorro
-    spr(
-      sps[flr(e.s)],
-      e.x + 78,
-      e.y,
-      2, 2,
-      e.fh
-    )
-    palt()
-  end
 
-  return e
+    return e
 end
 
 -->8
@@ -330,7 +333,7 @@ function drw_bosque()
 end
 -->8
 -- enemigos
-function ini_enemigos()
+function ini_enemigos(num)
     enes = {}
 end
 
@@ -360,7 +363,7 @@ function make_enemy(num)
         e.s += .15
 
         if flr(e.s) > #sps then
-            e.s = 1
+            e.s = 33
         end
         --fondo transparente
         palt(0, false)
@@ -414,6 +417,70 @@ __gfx__
 00000000bbb50b50bbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bbbbbbbbbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bbbbbbbbbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaaa5555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaa55777755aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaf77777745aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa54ffff77ff45aaaaaaaaaaa9999a9aaaa9aaa9a9a999a999a9999a0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa5444fffff445aaaaaaaaaaa9aaaa9aaaa9aaa9aaa9a9aaa9a9aaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaa55f411ffff419f55aaaaaaaaa999aa9aaaa9aaa9a9a9a9aaa9a999aa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaa59ff1ffffffff1ff95aaaaaaaa9aaaa9aaaaa9a9aa9a999a9a9a9aaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaa59911ffffffffffff11145aaaaaa9999a999aaaa9aaa9a9a9a999a9999a0000000000000000000000000000000000000000000000000000000000000000
+aaaaa4997711999999999177514aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaa5591424449999994ff54412f5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaa59919419999999994991441f45aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaa999141799449ff944997121ff4aaaaaaaaaaaaaaa999aa9999aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aa599411949044444444f944111ff5aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a54f449949f4994449fffffff41ff5aaaaaaaaaaaaaa9aa9a999aaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a599199994f944ffff44ff4f4111f4aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a5919ff749f4704444070ff40979145aaaaaaaaaaaaa999aa9999aaaaa9aaaaa0000000000000000000000000000000000000000000000000000000000000000
+a591f7777ff0009779000ff77799145aaaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a541ff7704446f7777f644407779145aaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a5419977499f9701c07979947779145aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a5424677774f7700057774777704245aa9999a999aa9999aa999a9999a9aaa9a0000000000000000000000000000000000000000000000000000000000000000
+aa541997740f777777777047709145aaa9aaaa9aa9a9aaaa9aaaa9aa9a99aa9a0000000000000000000000000000000000000000000000000000000000000000
+aa544599ff0f77715777f0fff9444aaaa9aaaa9aa9a9aaaa9aaaa9aa9a999a9a0000000000000000000000000000000000000000000000000000000000000000
+aaa44219ff40ff01c0fff4ff91144aaaa999aa999aa999aaa999a9aa9a9a999a0000000000000000000000000000000000000000000000000000000000000000
+aaa544419ff40006d0004ff454445aaaa9aaaa9aa9a9aaaaaaa9a9aa9a9aa99a0000000000000000000000000000000000000000000000000000000000000000
+aaaa544499ff44444444ffff2445aaaaa9aaaa9aa9a9999a9999a9999a9aaa9a0000000000000000000000000000000000000000000000000000000000000000
+aaaaa54411ffff4ff4fffff1442aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaa5544115fffffffff124455aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaa54441ffffffff14445aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaa544411ffff1244425aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa5544524444555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -544,7 +611,8 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-
+__sfx__
+0005000027250292502a25024250212501e2501c25019250172501625014250132501325011250102500f2500c2500d2500d2500c2500b2500a25008250072500725007250072500825008250092500000000000
+0001000034250332502f2502b25029250272502425022250202501e2501d2501b250192501825016250152501425012250102500e2500c2500b2500a250082500725006250062500625006250062500625006250
+000700000025000250002500025000250002500325003250032500325003250032500325003250032500225002250022500225001250012500025000250002500025000250002500025000250002500025000250
+000b0000011700816000300183000000000000000001c4001c40000000264000000000000000000000000000000002b1000000000000000000000000000000000000000000000000000000000000000000003400
