@@ -39,8 +39,11 @@ function chgestado(est)
 end
 
 function dist(x0, y0, x1, y1, radio)
-    local puntoJug, puntoEnt = (x0 - x1) ^ 2, (y0 - y1) ^ 2
-    return radio ^ 2 <= puntoJug + puntoEnt
+    local punto_jug = (x1 - x0) ^ 2
+    local punto_ent = (y1 - y0) ^ 2
+    printh("punto_jug: " .. punto_jug .. " punto_ent: " .. punto_ent)
+    printh("radio: " .. radio .. " radio^2: " .. radio ^ 2)
+    return punto_jug + punto_ent <= radio ^ 2
 end
 
 function ini_ini()
@@ -79,12 +82,20 @@ function jug_ini()
     chorros = {}
     ladridos = {}
     hambre = 100
+    pant_x = {
+        { false },
+        { false },
+        { false },
+        { false },
+        { false }
+    }
 
-    --setup jugador
+    pant_y = {
+        { false },
+        { false }
+    }
+
     jug = make_freson()
-
-    --setup chorro
-    ini_enemigos(1)
 end
 
 function jug_upd()
@@ -108,20 +119,27 @@ function jug_drw()
     cls()
 
     camx = flr(jug.x \ 128) * 128
-	camy = flr(jug.y \ 128) * 128
+    camy = flr(jug.y \ 128) * 128
 
-	camera(camx, camy)
+    camera(camx, camy)
 
-	-- Calcular coordenadas de la pantalla
+    -- Calcular coordenadas de la pantalla
     screen_x = flr(camx / 128)
     screen_y = flr(camy / 128)
 
-	dibujar_agua(screen_x, screen_y)
+    --setup chorro
+    if ((pant_x[screen_x + 1][1] and pant_y[screen_y + 1][1]) == false) then
+        ini_enemigos(2)
+        pant_x[screen_x + 1][1] = true
+        pant_y[screen_y + 1][1] = true
+    end
 
-	-- Dibujar el mapa actual
-	map(0, 0, 0, 0, 128, 128)
+    dibujar_agua(screen_x, screen_y)
 
-	-- Dibujar cofres
+    -- Dibujar el mapa actual
+    map(0, 0, 0, 0, 128, 128)
+
+    -- Dibujar cofres
     dibujar_cofre(screen_x, screen_y, camx, camy)
 
     for e in all(ents) do
@@ -162,22 +180,22 @@ end
 
 -- Funciれはn para generar una clave れむnica para cada pantalla usando coordenadas
 function coord_key(x, y)
-	return x .. "," .. y
+    return x .. "," .. y
 end
 
 -->8
 -- entidades
 function make_entity(x, y)
-	local e = {}
-	e.x = x
-	e.y = y
-	e.s = 0
-	e.dx = 0
-	e.dy = 0
-	e.fr = nil
-	e.stat = nil
-	e.w = 0
-	e.h = 0
+    local e = {}
+    e.x = x
+    e.y = y
+    e.s = 0
+    e.dx = 0
+    e.dy = 0
+    e.fr = nil
+    e.stat = nil
+    e.w = 0
+    e.h = 0
 
     add(ents, e)
     return e
@@ -185,28 +203,29 @@ end
 
 -- Verificar colisiれはn
 function hayColision(x, y, w, h)
-	for i = 0, w do
-		--count up
-		for j = 0, h do
-			--count up
-			-- Convertir coordenadas en posiciones de celda
-			local celx = flr((x + i) / 8)
-			local cely = flr((y + j) / 8)
-			-- Obtener れとndice del sprite
-			local sprite = mget(celx, cely)
-			-- Verificar si el sprite tiene la bandera de solidez (flag 0)
-			if (fget(sprite, 0)) return true
-		end
-	end
-	return false
+    for i = 0, w do
+        --count up
+        for j = 0, h do
+            --count up
+            -- Convertir coordenadas en posiciones de celda
+            local celx = flr((x + i) / 8)
+            local cely = flr((y + j) / 8)
+            -- Obtener れとndice del sprite
+            local sprite = mget(celx, cely)
+            -- Verificar si el sprite tiene la bandera de solidez (flag 0)
+            if (fget(sprite, 0)) return true
+        end
+    end
+    return false
 end
 
 function dibujar_agua(screen_x, screen_y)
     -- Cambiar colores de la paleta para animar el agua
-    local colores_agua = { 1, 7 } -- Colores del agua
+    local colores_agua = { 1, 7 }
+    -- Colores del agua
     local tiempo = flr(t() * 4) % #colores_agua
     pal(14, colores_agua[tiempo + 1])
-	pal(13, colores_agua[tiempo + 2]) 
+    pal(13, colores_agua[tiempo + 2])
     -- Dibujar agua en la capa adicional solo en la pantalla 3
     local screen_x = flr(camx / 128)
     local screen_y = flr(camy / 128)
@@ -232,14 +251,14 @@ function dibujar_cofre(screen_x, screen_y, freson_x, freson_y)
     -- Coordenadas del cofre en cada pantalla
     local cofres = {
         { x = 64, y = 96, screen_x = 0, screen_y = 4 }, -- Cofre en pantalla 0,4
-        { x = 32, y = 48, screen_x = 1, screen_y = 0 }  -- Cofre en pantalla 1,0
+        { x = 32, y = 48, screen_x = 1, screen_y = 0 } -- Cofre en pantalla 1,0
     }
 
     -- Recorrer cofres y dibujar segれむn la pantalla
     for cofre in all(cofres) do
-		-- Dibujar el cofre si estれく en la pantalla actual
+        -- Dibujar el cofre si estれく en la pantalla actual
         if screen_x == cofre.screen_x and screen_y == cofre.screen_y then
-			-- Elegir sprites segれむn el estado (cerrado o abierto)
+            -- Elegir sprites segれむn el estado (cerrado o abierto)
             local sprite_base = cofre_abierto and 84 or 82
             spr(sprite_base, cofre.x, cofre.y)
             spr(sprite_base + 1, cofre.x + 8, cofre.y)
@@ -256,18 +275,19 @@ end
 
 -- freson
 function make_freson()
-	local e = make_entity(
-		64,
-		64
-	)
-	e.s = 1
-	e.fh = true
-	e.fr = {
-		walk = { 1, 3, 5 },
-		idle = { 1 }
-	}
-	e.w = 16
-	e.h = 16
+    local e = make_entity(
+        64,
+        64
+    )
+    e.s = 1
+    e.fh = true
+    e.fr = {
+        walk = { 1, 3, 5 },
+        idle = { 1 }
+    }
+    e.w = 16
+    e.h = 16
+    e.cofre1 = false
 
     local idle = "idle"
     local walk = "walk"
@@ -275,16 +295,16 @@ function make_freson()
 
     local velfreson = 1.25
 
-	e.upd = function()
-		e.stat = idle
-		e.dx = 0
-		e.dy = 0
+    e.upd = function()
+        e.stat = idle
+        e.dx = 0
+        e.dy = 0
 
-		if btn(⬅️) then
-			e.fh = false
-			e.stat = walk
-			e.dx = -velfreson
-		end
+        if btn(⬅️) then
+            e.fh = false
+            e.stat = walk
+            e.dx = -velfreson
+        end
 
         if btn(➡️) then
             e.fh = true
@@ -292,28 +312,28 @@ function make_freson()
             e.dx = velfreson
         end
 
-		if btn(⬆️) then
-			e.stat = walk
-			e.dy = -velfreson
-		end
+        if btn(⬆️) then
+            e.stat = walk
+            e.dy = -velfreson
+        end
 
-		if btn(⬇️) then
-			e.stat = walk
-			e.dy = velfreson
-		end
+        if btn(⬇️) then
+            e.stat = walk
+            e.dy = velfreson
+        end
 
-		-- Verificar colisiones antes de mover
-		if not hayColision(e.x + e.dx, e.y + e.h / 2 , e.w, e.h / 2) then
-			e.x += e.dx
-		end
-		if not hayColision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
-			e.y += e.dy
-		end
+        -- Verificar colisiones antes de mover
+        if not hayColision(e.x + e.dx, e.y + e.h / 2, e.w, e.h / 2) then
+            e.x += e.dx
+        end
+        if not hayColision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
+            e.y += e.dy
+        end
 
-		if btnp(❎) and #ladridos < 1 then
-			make_ladrido()
-		end
-	end
+        if btnp(❎) and #ladridos < 1 then
+            make_ladrido()
+        end
+    end
 
     e.drw = function()
         local sps = e.fr[e.stat]
@@ -327,7 +347,7 @@ function make_freson()
         palt(11, true)
         --dibujar freson
         spr(sps[flr(e.s)], e.x, e.y, 2, 2, e.fh)
-        rect(e.x, e.y + e.h / 2, e.x + e.w, e.y + e.h, 0)
+        rect(e.x + 2, e.y + e.h / 2, e.x + e.w - 4, e.y + e.h, 0)
         palt()
     end
 
@@ -346,57 +366,101 @@ function make_ladrido()
 end
 
 -- chorro
-function make_chorro()
-	local e = make_entity(0, 0)
-	e.s = 33
-	e.fh = false
-	e.fr = {
-		walk = { 33 },
-		idle = { 33 }
-	}
+function make_chorro(x, y)
+    local e = make_entity(x, y)
+    e.name = "chorro"
+    e.s = 1
+    e.fh = false
+    e.fr = {
+        walk = { 33 },
+        idle = { 33 }
+    }
+    e.stun = 30
+    e.w = 8
+    e.h = 14
 
     local idle = "idle"
     local walk = "walk"
-    e.stat = idle
+    e.stat = walk
 
-    local velchorro = 1.5
+    local velchorro = 0.5
 
     e.upd = function()
-        if (e.stat != "idle") then
-            e.stat = walk
-            if (e.x < jug.x) e.dx -= velchorro if (e.x > jug.x) e.dx += velchorro if (e.y > jug.y) e.dy -= velchorro if (e.y < jug.y) e.dy += velchorro e.x += e.dx
-            e.y += e.dy
-        elseif (stun > 0) then
-            stun -= 1
-        end
+        --falta denegar upd en screen de puente
+        if (e.x >= camx and e.y >= camy) then
+            if (e.stat != idle) then
+                e.stat = walk
+                if (e.x < jug.x) then
+                    e.fh = true
+                    e.dx = velchorro
+                end
+                if (e.x > jug.x) then
+                    e.fh = false
+                    e.dx = -velchorro
+                end
+                if (e.y > jug.y) then
+                    e.dy = -velchorro
+                end
+                if (e.y < jug.y) then
+                    e.dy = velchorro
+                end
 
-        for l in all(ladridos) do
-            if dist(jug.x, jug.y, e.x, e.y, l.r2) then
-                e.stat = idle
-                stun = 30
+                -- Verificar colisiones antes de mover
+                if not hayColision(e.x + e.dx, e.y + e.h / 2, e.x + e.w / 2, e.h / 2) then
+                    e.x += e.dx
+                end
+                if not hayColision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
+                    e.y += e.dy
+                end
+            elseif (e.stun > 0) then
+                e.stun -= 1
+            elseif (e.stun == 0) then
+                e.stat = walk
+            end
+
+            for l in all(ladridos) do
+                if dist(jug.x, jug.y, e.x, e.y, l.r2) then
+                    e.stat = idle
+                    e.stun = 30
+                end
             end
         end
     end
 
     e.drw = function()
-        local sps = e.fr[e.stat]
-        e.s += .15
+        --falta denegar drw en screen de puente
+        if (e.x >= camx and e.y >= camy) then
+            local sps = e.fr[e.stat]
+            e.s += .15
 
-        if flr(e.s) > #sps then
-            e.s = 1
+            if flr(e.s) > #sps then
+                e.s = 1
+            end
+            --dibujar chorro
+            palt(0, false)
+            palt(11, true)
+            spr(
+                sps[flr(e.s)],
+                e.x,
+                e.y,
+                2, 2,
+                e.fh
+            )
+            if (e.fh == false) then
+                rect(e.x + 2,
+                 e.y + e.h / 2 + 1,
+                 e.x + e.w,
+                 e.y + e.h,
+                 0)
+            else 
+                rect(e.x + 4 + 2,
+                    e.y + e.h / 2 + 1,
+                    e.x + e.w + 4,
+                    e.y + e.h,
+                    0)
+            end
+            palt()
         end
-        --fondo transparente
-        palt(0, false)
-        palt(11, true)
-        --dibujar chorro
-        spr(
-            sps[flr(e.s)],
-            e.x + 78,
-            e.y,
-            2, 2,
-            e.fh
-        )
-        palt()
     end
 
     return e
@@ -452,49 +516,11 @@ end
 -- enemigos
 function ini_enemigos(num)
     enes = {}
+    make_enemy(1)
 end
 
 function make_enemy(num)
-    local e = make_entity()
-    local upd = e.upd
-
-    e.name = "chorro"
-    e.s = 33
-    e.fh = false
-    e.fr = {
-        walk = { 33 },
-        idle = { 33 }
-    }
-
-    local idle = "idle"
-    local walk = "walk"
-
-    local velchorro = 1.5
-
-    e.upd = function()
-        e.stat = idle
-    end
-
-    e.drw = function()
-        local sps = e.fr[e.stat]
-        e.s += .15
-
-        if flr(e.s) > #sps then
-            e.s = 33
-        end
-        --fondo transparente
-        palt(0, false)
-        palt(11, true)
-        --dibujar chorro
-        spr(
-            sps[flr(e.s)],
-            e.x + 78,
-            e.y,
-            2, 2,
-            e.fh
-        )
-        palt()
-    end
+    local e = make_chorro(camx + flr(rnd(120)), camy + flr(rnd(120)))
 
     add(enes, e)
 
@@ -510,22 +536,22 @@ __gfx__
 00700700bf4949949f666f49b990ff0999666f49990ff09996666f4b000000000000000000000000000000000000000000000000000000000000000000000000
 00000000b9f990099f64444fb4949949f64444444949949f6444444f000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bb4f4444ff44444fbf990099f644444ff990099f6444444f000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bb66f9fff4444449b4f4444ff44444444f4444ff4444444400000000000000000000000000000000bbb33bbb00000000000000000000000000000000
-00000000bbb444444444444bbb6f9fff4444444bb6f9fff44444444f00000000000000000000000000000000bb3333bb00000000000000000000000000000000
-00000000bbb544444444444bbb44444444544449b94444444444444900000000000000000000000000000000b333333b00000000000000000000000000000000
-00000000bbb5444445544449bb44444445b5444bbb4444444554444b000000000000000000000000000000003333333300000000000000000000000000000000
-00000000bbb445445b554449b444bb445bbb444bbbb444545b55445b000000000000000000000000000000003333333300000000000000000000000000000000
-00000000bbb4554bbbb54544b44bb44bbbbb4b44bbbb4bb4bbb4bb4b000000000000000000000000000000003333333300000000000000000000000000000000
-00000000bbb4bb4bbbbb4b54b45bd4bbbbbd6bb9bbbb44b44bd6b44b00000000000000000000000000000000b334433b00000000000000000000000000000000
-00000000bbddb99bbb669b5994bbbbbbbbbbbbbbbbbbb9bb5bbbb9bb00000000000000000000000000000000bbb44bbb00000000000000000000000000000000
-00000000bbbbbbbbbbbbbbbb0000000000000000000000000000000000000000000000000000000000000000bbb66bbb00000000000000000000000000000000
-00000000bb222222bbbbbbbb0000000000000000000000000000000000000000000000000000000000000000b666666bb0000000000000000000000000000000
-00000000b222e22222bbbbbb000000000000000000000000000000000000000000000000000000000000000066666666b0000000000000000000000000000000
-00000000b8e880e2e2bbbbbb000000000000000000000000000000000000000000000000000000000000000066666666b0000000000000000000000000000000
-00000000bf77ff77f2bbbbbb00000000000000000000000000000000000000000000000000000000000000006666666bb0000000000000000000000000000000
-00000000bf07ff07f2bbbbbb0000000000000000000000000000000000000000000000000000000000000000666666bbb0000000000000000000000000000000
-00000000bbfffffff2bbbbbb0000000000000000000000000000000000000000000000000000000000000000b6666bbbb0000000000000000000000000000000
-00000000bbff000f22bbbbbb0000000000000000000000000000000000000000000000000000000000000000bbb66bbb00000000000000000000000000000000
+00000000bb66f9fff4444449b4f4444ff44444444f4444ff44444444000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb444444444444bbb6f9fff4444444bb6f9fff44444444f000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb544444444444bbb44444444544449b944444444444449000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb5444445544449bb44444445b5444bbb4444444554444b000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb445445b554449b444bb445bbb444bbbb444545b55445b000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb4554bbbb54544b44bb44bbbbb4b44bbbb4bb4bbb4bb4b000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb4bb4bbbbb4b54b45bd4bbbbbd6bb9bbbb44b44bd6b44b000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbddb99bbb669b5994bbbbbbbbbbbbbbbbbbb9bb5bbbb9bb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbbbbbbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bb222222bbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000b222e22222bbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000b8e880e2e2bbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bf77ff77f2bbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bf07ff07f2bbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbfffffff2bbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbff000f22bbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bbbffff22bbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bbbb2222bbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bbbf222fbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -566,38 +592,38 @@ b6bbbbbb666bbbbb8808808888808888880888086677116100000000000000000000000000000000
 666615556666155b8808808888808888888888087777716100000000000000000000000000000000000000000000000000000000000000000000000000000000
 666611116666111b8808808888808888880888086677116100000000000000000000000000000000000000000000000000000000000000000000000000000000
 666616656666166b8808808888808888888000886677111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbb555555bb5bbbbbbbbbb00000000000000000000000000000000
-aaaaaaaaaaaaaa5555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbb55dddddd55555bbbbbbbb00000000000000000000000000000000
-aaaaaaaaaaaa55777755aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb5ddd66ddd5ffff5bbbbbbb00000000000000000000000000000000
-aaaaaaaaaaaaf77777745aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbb5d66dddd5fffff5bbbbbbb00000000000000000000000000000000
-aaaaaaaaaa54ffff77ff45aaaaaaaaaaa9999a9aaaa9aaa9a9a999a999a9999abbbbbbbbb5dd6dddd5fffffff5bbbbbb00000000000000000000000000000000
-aaaaaaaaaa5444fffff445aaaaaaaaaaa9aaaa9aaaa9aaa9aaa9a9aaa9a9aaaabbbbbbbb5dd66ddd5ff44444ff5bbbbb00000000000000000000000000000000
-aaaaaaaa55f411ffff419f55aaaaaaaaa999aa9aaaa9aaa9a9a9a9aaa9a999aabbbbbbb5d666ddd5fff4cc74ff5bbbbb00000000000000000000000000000000
-aaaaaaa59ff1ffffffff1ff95aaaaaaaa9aaaa9aaaaa9a9aa9a999a9a9a9aaaabbbbbb5d66dddd5ffff44444fff5bbbb00000000000000000000000000000000
-aaaaa59911ffffffffffff11145aaaaaa9999a999aaaa9aaa9a9a9a999a9999abbbbb5dd6ddddd5ffffffffffff5bbbb00000000000000000000000000000000
-aaaaa4997711999999999177514aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbb5555555555f555555555555555bb00000000000000000000000000000000
-aaa5591424449999994ff54412f5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbb5ff4cccc4ffffffff4c4fffff5bb00000000000000000000000000000000
-aaa59919419999999994991441f45aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbb5fff477774ffffffff474fffff55b00000000000000000000000000000000
-aaa999141799449ff944997121ff4aaaaaaaaaaaaaaa999aa9999aaaaaaaaaaabb5ffff444444ffffffff444fffff5bb00000000000000000000000000000000
-aa599411949044444444f944111ff5aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaabb5ffffffffffffffffffffffffff5bb00000000000000000000000000000000
-a54f449949f4994449fffffff41ff5aaaaaaaaaaaaaa9aa9a999aaaaaaaaaaaabb5555555555555555555555555555bb00000000000000000000000000000000
-a599199994f944ffff44ff4f4111f4aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaabb66fffffff66ffffff66fffffff66bb00000000000000000000000000000000
-a5919ff749f4704444070ff40979145aaaaaaaaaaaaa999aa9999aaaaa9aaaaabb66fffffff66ffffff66fffffff66bb00000000000000000000000000000000
-a591f7777ff0009779000ff77799145aaaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaabb66ff444ff66ffffff66f44444f66bb00000000000000000000000000000000
-a541ff7704446f7777f644407779145aaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaaabb66ff4c4ff66ffffff66f47c74f66bb00000000000000000000000000000000
-a5419977499f9701c07979947779145aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb66ff4c4ff66f4444f66f47c74f66bb00000000000000000000000000000000
-a5424677774f7700057774777704245aa9999a999aa9999aa999a9999a9aaa9abb66ff474ff66f4c74f66f47c74f66bb00000000000000000000000000000000
-aa541997740f777777777047709145aaa9aaaa9aa9a9aaaa9aaaa9aa9a99aa9abb66ff444ff66f4cc4f66f47c74f66bb00000000000000000000000000000000
-aa544599ff0f77715777f0fff9444aaaa9aaaa9aa9a9aaaa9aaaa9aa9a999a9abb66fffffff66f4cc4f66f47c74f66bb00000000000000000000000000000000
-aaa44219ff40ff01c0fff4ff91144aaaa999aa999aa999aaa999a9aa9a9a999abb66fffffff66fa444f66f44444f66bb00000000000000000000000000000000
-aaa544419ff40006d0004ff454445aaaa9aaaa9aa9a9aaaaaaa9a9aa9a9aa99abb66fffffff66f4444f66fffffff66bb00000000000000000000000000000000
-aaaa544499ff44444444ffff2445aaaaa9aaaa9aa9a9999a9999a9999a9aaa9abb66fffffff66f4444f66fffffff66bb00000000000000000000000000000000
-aaaaa54411ffff4ff4fffff1442aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab555555555555555555555555555555b00000000000000000000000000000000
-aaaaa5544115fffffffff124455aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab666666666666666666666666666666b00000000000000000000000000000000
-aaaaaaa54441ffffffff14445aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab666666666666666666666666666666b00000000000000000000000000000000
-aaaaaaaa544411ffff1244425aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa3333333333333333333333333333333300000000000000000000000000000000
-aaaaaaaaaa5544524444555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbb33333333333333333333333bbbbb00000000000000000000000000000000
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbb33333333333333333bbbbbbbb00000000000000000000000000000000
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaaa5555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaa55777755aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaf77777745aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa54ffff77ff45aaaaaaaaaaa9999a9aaaa9aaa9a9a999a999a9999a0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa5444fffff445aaaaaaaaaaa9aaaa9aaaa9aaa9aaa9a9aaa9a9aaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaa55f411ffff419f55aaaaaaaaa999aa9aaaa9aaa9a9a9a9aaa9a999aa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaa59ff1ffffffff1ff95aaaaaaaa9aaaa9aaaaa9a9aa9a999a9a9a9aaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaa59911ffffffffffff11145aaaaaa9999a999aaaa9aaa9a9a9a999a9999a0000000000000000000000000000000000000000000000000000000000000000
+aaaaa4997711999999999177514aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaa5591424449999994ff54412f5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaa59919419999999994991441f45aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaa999141799449ff944997121ff4aaaaaaaaaaaaaaa999aa9999aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aa599411949044444444f944111ff5aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a54f449949f4994449fffffff41ff5aaaaaaaaaaaaaa9aa9a999aaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a599199994f944ffff44ff4f4111f4aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a5919ff749f4704444070ff40979145aaaaaaaaaaaaa999aa9999aaaaa9aaaaa0000000000000000000000000000000000000000000000000000000000000000
+a591f7777ff0009779000ff77799145aaaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a541ff7704446f7777f644407779145aaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a5419977499f9701c07979947779145aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a5424677774f7700057774777704245aa9999a999aa9999aa999a9999a9aaa9a0000000000000000000000000000000000000000000000000000000000000000
+aa541997740f777777777047709145aaa9aaaa9aa9a9aaaa9aaaa9aa9a99aa9a0000000000000000000000000000000000000000000000000000000000000000
+aa544599ff0f77715777f0fff9444aaaa9aaaa9aa9a9aaaa9aaaa9aa9a999a9a0000000000000000000000000000000000000000000000000000000000000000
+aaa44219ff40ff01c0fff4ff91144aaaa999aa999aa999aaa999a9aa9a9a999a0000000000000000000000000000000000000000000000000000000000000000
+aaa544419ff40006d0004ff454445aaaa9aaaa9aa9a9aaaaaaa9a9aa9a9aa99a0000000000000000000000000000000000000000000000000000000000000000
+aaaa544499ff44444444ffff2445aaaaa9aaaa9aa9a9999a9999a9999a9aaa9a0000000000000000000000000000000000000000000000000000000000000000
+aaaaa54411ffff4ff4fffff1442aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaa5544115fffffffff124455aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaa54441ffffffff14445aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaa544411ffff1244425aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa5544524444555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
