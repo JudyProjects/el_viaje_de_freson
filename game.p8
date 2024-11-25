@@ -96,6 +96,11 @@ function jug_ini()
 end
 
 function jug_upd()
+
+    if estado == "fin" then
+        return
+    end
+
     cnt += 1
     tiempo += 1 / 30 -- 30FPS
 
@@ -124,7 +129,8 @@ function jug_upd()
     if hambre <= 0 then
         chgestado("fin")
     end
-    printh(hambre .. " ")
+    printh(hambre .. " " .. tostring(jug.llave1) .. " " .. tostring(jug.llave2) .. " ")
+
 end
 
 function jug_drw()
@@ -156,18 +162,24 @@ function jug_drw()
     camera()
     dibujar_tiempo()
     dibujar_hambre(hambre)
+    dibujar_llaves(jug)
 
 end
 
 function fin_ini()
-    f_msg = "\#3\f7fin del juego"
-    f_mx = 63 - 26
-    f_my = 58
+    music(-1)
 
-    if (jug.hambre <= 0) then
-        f_msg = "\#8\f7\^w\^perdiste"
-        f_mx = 31
+    hambre = 0
+
+    -- Mensajes predefinidos para el estado "Fin"
+    if jug.hambre == nil then
+        f_msg = "\#8\f7\^w\^ perdiste"
+        f_mx = 31 -- Centrado para el mensaje de pれたrdida
+    else
+        f_msg = "\#3\f7fin del juego"
+        f_mx = 63 - 26
     end
+    f_my = 58
 end
 
 function fin_upd()
@@ -179,7 +191,7 @@ function fin_upd()
 end
 
 function fin_drw()
-    jug_drw()
+    cls(0)
 
     print(f_msg, f_mx, f_my)
     print("\#e\f1❎+🅾️ para volver", 33, 122)
@@ -208,9 +220,9 @@ function make_entity(x, y)
     return e
 end
 
--- Verificar colisiれはn
+-- Verificar colision  en el mapa
 function hayColision(x, y, w, h)
-	-- Verifica las esquinas del れくrea
+	-- Verifica las esquinas del area
     local esquinas = {
         {x, y}, -- Esquina superior izquierda
         {x + w - 1, y}, -- Esquina superior derecha
@@ -227,6 +239,12 @@ function hayColision(x, y, w, h)
         end
     end
 
+    if sprite == 105 or sprite == 106 or sprite == 107 then
+        -- Comprobar si el jugador tiene ambas llaves
+        if not (jug.llave1 and jug.llave2) then
+            return true -- Bloquear si no tiene ambas llaves
+        end
+    end
     return false
 end
 
@@ -274,13 +292,28 @@ function dibujar_hambre()
     local nivel_sprite = flr((hambre_max - hambre) / (hambre_max / nivel_sprite_max)) + 1
     if nivel_sprite > nivel_sprite_max then
         nivel_sprite = nivel_sprite_max -- Limitar al maximo nivel
-    elseif nivel_sprite < 1 then
-        nivel_sprite = 1 -- Limitar al minimo nivel
+    elseif nivel_sprite < 0 then
+        nivel_sprite = 0 -- Limitar al minimo nivel
     end
 
     -- Dibujar el sprite correspondiente
     spr(sprites_inicio + nivel_sprite - 1, 120, 0)
 end
+
+function dibujar_llaves(freson)
+    -- Coordenadas iniciales para los iconos de las llaves
+    local x_inicial = 100
+    local y_inicial = 0
+
+    if freson.llave1 then
+        spr(125, x_inicial, y_inicial)
+    end
+
+    if freson.llave2 then
+        spr(125, x_inicial + 10 , y_inicial)
+    end
+end
+
 
 -- freson
 function make_freson()
@@ -377,7 +410,6 @@ function make_cofre(x, y, screen_x, screen_y, llave_id)
     cofre.screen_y = screen_y
 
     cofre.drw = function(screen_x, screen_y)
-        -- Dibujar solo si estan visible y dentro del rango de la pantalla
         if cofre.visible then
             local spr_x = cofre.abierto and cofre.s_abierto or cofre.s_cerrado
             spr(spr_x, cofre.x, cofre.y, 2, 2)
@@ -385,7 +417,6 @@ function make_cofre(x, y, screen_x, screen_y, llave_id)
     end
 
     cofre.upd = function(screen_x, screen_y)
-        -- Verificar colisiれはn y si estan en la pantalla visible
         if cofre.visible and
            not cofre.abierto and colisiona(jug, cofre) then
             cofre.abierto = true -- Cambiar estado a abierto
@@ -403,15 +434,14 @@ function make_llave(x, y, screen_x, screen_y, llave_id)
     llave.llave_id = llave_id
     llave.collected = false
     llave.visible = true
-    llave.w = 16 -- Ancho de la llave
+    llave.w = 16-- Ancho de la llave
     llave.h = 16 -- Alto de la llave
     llave.screen_x = screen_x
     llave.screen_y = screen_y
 
     llave.drw = function(screen_x, screen_y)
-        -- Dibujar solo si estれく visible y dentro del rango de la pantalla
         if llave.visible then
-            spr(llave.sprites[1], llave.x, llave.y)          -- Esquina superior izquierda
+            spr(llave.sprites[1], llave.x, llave.y)         -- Esquina superior izquierda
             spr(llave.sprites[2], llave.x + 8, llave.y)      -- Esquina superior derecha
             spr(llave.sprites[3], llave.x, llave.y + 8)      -- Esquina inferior izquierda
             spr(llave.sprites[4], llave.x + 8, llave.y + 8)  -- Esquina inferior derecha
@@ -419,9 +449,7 @@ function make_llave(x, y, screen_x, screen_y, llave_id)
     end
 
     llave.upd = function(screen_x, screen_y)
-        -- Verificar colision y si estan visible en la pantalla
-        if llave.visible and
-           not llave.collected and colisiona(jug, llave) then
+        if not llave.collected and colisiona(jug, llave) then
             llave.collected = true -- Marcar la llave como recogida
             llave.visible = false -- Desaparece la llave
             -- Actualizar el estado en `freson`
@@ -676,13 +704,13 @@ b666111111166666a566666666666669a566666666666669ccc44cccc7cccc77b666566644044461
 566516666616666b95666666666666699566666666666669c7744cccccccccccb556665544444466444444666611116688888888888888881611666611111666
 5b55b55555bb5b5b99999999999999999999999999999999ccc44ccccccc77ccb756665744444466444404666666166688888888888888881111666611111111
 bbbbbbbbbbbbbbbb8800008888800008888000886677111111111111000000000000000000000000000000000000000000000000000000000000000000000000
-b6bbbbbb666bbbbb8808808888808888880888086677116111111111008008000050050000500500005005000050050000500500000000000000000000000000
-33bbbb336666bbbb8808808888808888880888887777716111116666088888800555555005555550055555500555555005555550000000000000000000000000
-113133666661bb6b8800008888800088888000887777716111666666078888800788888005555550055555500555555005555550000000000000000000000000
-666615666666156b8808808888808888888888087777716111666666088888800888888008888880055555500555555005555550000000000000000000000000
-666615556666155b8808808888808888888888087777716116666666008888000088880000888800008888000055550000555500000000000000000000000000
-666611116666111b8808808888808888880888086677116116666666000880000008800000088000000880000008800000055000000000000000000000000000
-666616656666166b8808808888808888888000886677111116666666000000000000000000000000000000000000000000000000000000000000000000000000
+b6bbbbbb666bbbbb88088088888088888808880866771161111111110080080000500500005005000050050000500500005005000aaaaaa00000000000000000
+33bbbb336666bbbb88088088888088888808888877777161111166660888888005555550055555500555555005555550055555500a2222a00000000000000000
+113133666661bb6b88000088888000888880008877777161116666660788888007888880055555500555555005555550055555500aaaaaa00000000000000000
+666615666666156b8808808888808888888888087777716111666666088888800888888008888880055555500555555005555550000a00000000000000000000
+666615556666155b88088088888088888888880877777161166666660088880000888800008888000088880000555500005555000b0aaa000000000000000000
+666611116666111b8808808888808888880888086677116116666666000880000008800000088000000880000008800000055000bbba00000000000000000000
+666616656666166b88088088888088888880008866771111166666660000000000000000000000000000000000000000000000000b0aaaa00000000000000000
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
 aaaaaaaaaaaaaa5555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
 aaaaaaaaaaaa55777755aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
@@ -862,7 +890,7 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010101010000000001010101000000000000010000010000010000000000000000000101000000000000010100000000000001000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010101010000000001010101000000000000010000010000010000000000000000000101000303030000010100000000000001000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
