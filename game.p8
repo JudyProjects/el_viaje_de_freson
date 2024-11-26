@@ -5,515 +5,515 @@ __lua__
 -- festino a., sancristobal f.
 
 function _init()
-    printh("== == ==")
-    printh("iniciando juego")
-    cnt = 0
-    debug = false
-    estado = "inicio"
-    tblestados = {
-        inicio = {
-            ini = ini_ini,
-            upd = ini_upd,
-            drw = ini_drw
-        },
-        juego = {
-            ini = jug_ini,
-            upd = jug_upd,
-            drw = jug_drw
-        },
-        fin = {
-            ini = fin_ini,
-            upd = fin_upd,
-            drw = fin_drw
-        }
+  printh("== == ==")
+  printh("iniciando juego")
+  cnt = 0
+  debug = false
+  estado = "inicio"
+  tblestados = {
+    inicio = {
+      ini = ini_ini,
+      upd = ini_upd,
+      drw = ini_drw
+    },
+    juego = {
+      ini = jug_ini,
+      upd = jug_upd,
+      drw = jug_drw
+    },
+    fin = {
+      ini = fin_ini,
+      upd = fin_upd,
+      drw = fin_drw
     }
-    chgestado(estado)
+  }
+  chgestado(estado)
 end
 
 function chgestado(est)
-    estado = est
+  estado = est
 
-    tblestados[estado].ini()
-    _update = tblestados[estado].upd
-    _draw = tblestados[estado].drw
+  tblestados[estado].ini()
+  _update = tblestados[estado].upd
+  _draw = tblestados[estado].drw
 end
 
 function dist(x0, y0, x1, y1, radio)
-    return (((x1 - x0) ^ 2) + ((y1 - y0) ^ 2)) <= radio ^ 2
+  return (((x1 - x0) ^ 2) + ((y1 - y0) ^ 2)) <= radio ^ 2
 end
 
 function ini_ini()
-    -- capa de fondo
-    ini_bosque()
+  -- capa de fondo
+  ini_bosque()
 
-    i_tmp = 30
+  i_tmp = 30
 end
 
 function ini_upd()
-    if (i_tmp > 0) i_tmp -= 1
-    if (i_tmp <= 0) then
-        if (btn(❎) and btn(🅾️)) then
-            chgestado("juego")
-        end
+  if (i_tmp > 0) i_tmp -= 1
+  if (i_tmp <= 0) then
+    if (btn(❎) and btn(🅾️)) then
+      chgestado("juego")
     end
+  end
 end
 
 function ini_drw()
-    cls()
+  cls()
 
-    drw_bosque()
-    palt(0, false)
-    palt(10, true)
-    spr(132, 63 - 16, 33 - 16, 4, 4)
-    spr(128, 63 - 16, 63 - 16, 4, 4)
-    palt()
-    if (i_tmp <= 0) then
-        print("\#9\f7❎+🅾️ para empezar", 29, 122)
-    end
-    cnt = 0
+  drw_bosque()
+  palt(0, false)
+  palt(10, true)
+  spr(132, 63 - 16, 33 - 16, 4, 4)
+  spr(128, 63 - 16, 63 - 16, 4, 4)
+  palt()
+  if (i_tmp <= 0) then
+    print("\#9\f7❎+🅾️ para empezar", 29, 122)
+  end
+  cnt = 0
 end
 
 function jug_ini()
-    ents = {}
-    chorros = {}
-    ladridos = {}
-    mordiscos = {}
-    hambre = 100
-    pant_x = {
-        { false },
-        { false },
-        { false },
-        { false },
-        { false }
-    }
+  ents = {}
+  chorros = {}
+  ladridos = {}
+  mordiscos = {}
+  hambre = 100
+  pant_x = {
+    { false },
+    { false },
+    { false },
+    { false },
+    { false }
+  }
 
-    pant_y = {
-        { false },
-        { false }
-    }
+  pant_y = {
+    { false },
+    { false }
+  }
 
-    jug = make_freson()
+  jug = make_freson()
 end
 
 function jug_upd()
-    cnt += 1
-    for e in all(ents) do
-        e.upd()
-    end
+  cnt += 1
+  for e in all(ents) do
+    e.upd()
+  end
 
-    for l in all(ladridos) do
-        l.r1 += 2 -- el circulo exterior crece
-        l.r2 += 1 -- el circulo interior crece mas lento
+  for l in all(ladridos) do
+    l.r1 += 2 -- el circulo exterior crece
+    l.r2 += 1 -- el circulo interior crece mas lento
 
-        -- eliminar ladrido cuando el circulo exterior supera tamanio
-        if l.r1 > 30 then
-            del(ladridos, l)
-        end
+    -- eliminar ladrido cuando el circulo exterior supera tamanio
+    if l.r1 > 30 then
+      del(ladridos, l)
     end
-    print("Hambre: "..hambre, 0, 0, 2)
+  end
+  print("Hambre: " .. hambre, 0, 0, 2)
 end
 
 function jug_drw()
-    cls()
+  cls()
 
-    camx = flr(jug.x \ 128) * 128
-    camy = flr(jug.y \ 128) * 128
+  camx = flr(jug.x \ 128) * 128
+  camy = flr(jug.y \ 128) * 128
 
-    camera(camx, camy)
+  camera(camx, camy)
 
-    -- calcular coordenadas de la pantalla
-    screen_x = flr(camx / 128)
-    screen_y = flr(camy / 128)
+  -- calcular coordenadas de la pantalla
+  screen_x = flr(camx / 128)
+  screen_y = flr(camy / 128)
 
-    --setup chorro
-    if ((pant_x[screen_x + 1][1] and pant_y[screen_y + 1][1]) == false) then
-        if (screen_x == 2 and screen_y == 0) then
-        else
-            ini_enemigos(2)
-            pant_x[screen_x + 1][1] = true
-            pant_y[screen_y + 1][1] = true
-        end
+  --setup chorro
+  if ((pant_x[screen_x + 1][1] and pant_y[screen_y + 1][1]) == false) then
+    if (screen_x == 2 and screen_y == 0) then
+    else
+      ini_enemigos(2)
+      pant_x[screen_x + 1][1] = true
+      pant_y[screen_y + 1][1] = true
     end
+  end
 
-    dibujar_agua(screen_x, screen_y)
+  dibujar_agua(screen_x, screen_y)
 
-    -- dibujar el mapa actual
-    map(0, 0, 0, 0, 128, 128)
+  -- dibujar el mapa actual
+  map(0, 0, 0, 0, 128, 128)
 
-    -- dibujar cofres
-    dibujar_cofre(screen_x, screen_y, camx, camy)
+  -- dibujar cofres
+  dibujar_cofre(screen_x, screen_y, camx, camy)
 
-    for e in all(ents) do
-        e.drw()
-    end
+  for e in all(ents) do
+    e.drw()
+  end
 
-    for l in all(ladridos) do
-        circ(jug.x + 8, jug.y + 8, l.r1, 7) -- circulo exterior
-        circ(jug.x + 8, jug.y + 8, l.r2, 7) -- circulo interior
-    end
+  for l in all(ladridos) do
+    circ(jug.x + 8, jug.y + 8, l.r1, 7) -- circulo exterior
+    circ(jug.x + 8, jug.y + 8, l.r2, 7) -- circulo interior
+  end
 end
 
 function fin_ini()
-    f_msg = "\#3\f7fin del juego"
-    f_mx = 63 - 26
-    f_my = 58
+  f_msg = "\#3\f7fin del juego"
+  f_mx = 63 - 26
+  f_my = 58
 
-    if (jug.hambre <= 0) then
-        f_msg = "\#8\f7\^w\^perdiste"
-        f_mx = 31
-    end
+  if (jug.hambre <= 0) then
+    f_msg = "\#8\f7\^w\^perdiste"
+    f_mx = 31
+  end
 end
 
 function fin_upd()
-    jug_upd()
+  jug_upd()
 
-    if btn(❎) and btn(🅾️) then
-        chgestado("inicio")
-    end
+  if btn(❎) and btn(🅾️) then
+    chgestado("inicio")
+  end
 end
 
 function fin_drw()
-    jug_drw()
+  jug_drw()
 
-    print(f_msg, f_mx, f_my)
-    print("\#e\f1❎+🅾️ para volver", 33, 122)
+  print(f_msg, f_mx, f_my)
+  print("\#e\f1❎+🅾️ para volver", 33, 122)
 end
 
 -->8
 -- entidades
 function make_entity(x, y)
-    local e = {}
-    e.x = x
-    e.y = y
-    e.s = 0
-    e.dx = 0
-    e.dy = 0
-    e.fr = nil
-    e.stat = nil
-    e.w = 0
-    e.h = 0
+  local e = {}
+  e.x = x
+  e.y = y
+  e.s = 0
+  e.dx = 0
+  e.dy = 0
+  e.fr = nil
+  e.stat = nil
+  e.w = 0
+  e.h = 0
 
-    add(ents, e)
-    return e
+  add(ents, e)
+  return e
 end
 
 function hay_colision(x, y, w, h)
-    for i = 0, w do
-        --count up
-        for j = 0, h do
-            --count up
-            -- convertir coordenadas en posiciones de celda
-            local celx = flr((x + i) / 8)
-            local cely = flr((y + j) / 8)
-            -- obtener indice del sprite
-            local sprite = mget(celx, cely)
-            -- verificar si el sprite tiene la bandera de solidez (flag 0)
-            if (fget(sprite, 0)) return true
-        end
+  for i = 0, w do
+    --count up
+    for j = 0, h do
+      --count up
+      -- convertir coordenadas en posiciones de celda
+      local celx = flr((x + i) / 8)
+      local cely = flr((y + j) / 8)
+      -- obtener indice del sprite
+      local sprite = mget(celx, cely)
+      -- verificar si el sprite tiene la bandera de solidez (flag 0)
+      if fget(sprite, 0) then
+        return true
+      end
     end
-    return false
+  end
+  return false
 end
 
 function colision_mordisco(x, y, w, h)
-    for m in all(mordiscos) do
-        -- verificar colision entre  entidad y mordisco
-        if
-            -- entidad a izquierda de mord
-
-            -- entidad a derecha de mord
-
-            -- entidad por arriba del mord
-
-            -- entidad por abajo del mord
-            not (x + w < m.x
-                        or x > m.x + m.w
-                        or y + h < m.y
-                        or y > m.y + m.h) then
-            return true
-        end
+  for m in all(mordiscos) do
+    rect(m.x, m.y, m.w, m.h, 0)
+    -- verificar colision entre  entidad y mordisco
+    if not (x + w < m.x or x > m.x + m.w
+          or y + h < m.y
+          or y > m.y + m.h) then
+      return true
     end
+  end
 
-    return false
+  return false
 end
 
 function dibujar_agua(screen_x, screen_y)
-    -- cambiar colores de la paleta para animar el agua
-    local colores_agua = { 1, 7 }
-    -- colores del agua
-    local tiempo = flr(t() * 4) % #colores_agua
-    pal(14, colores_agua[tiempo + 1])
-    pal(13, colores_agua[tiempo + 2])
-    -- dibujar agua en la capa adicional solo en la pantalla 3
-    local screen_x = flr(camx / 128)
-    local screen_y = flr(camy / 128)
+  -- cambiar colores de la paleta para animar el agua
+  local colores_agua = { 1, 7 }
+  -- colores del agua
+  local tiempo = flr(t() * 4) % #colores_agua
+  pal(14, colores_agua[tiempo + 1])
+  pal(13, colores_agua[tiempo + 2])
+  -- dibujar agua en la capa adicional solo en la pantalla 3
+  local screen_x = flr(camx / 128)
+  local screen_y = flr(camy / 128)
 
-    if screen_x == 2 and screen_y == 0 then
-        for f = 0, 15 do
-            for c = 0, 15 do
-                local x = c * 8
-                local y = f * 8
-                spr(89, 256 + x, y)
-            end
-        end
+  if screen_x == 2 and screen_y == 0 then
+    for f = 0, 15 do
+      for c = 0, 15 do
+        local x = c * 8
+        local y = f * 8
+        spr(89, 256 + x, y)
+      end
     end
+  end
 
-    -- restaurar la paleta al finalizar
-    pal()
+  -- restaurar la paleta al finalizar
+  pal()
 end
 
 -- funcion para dibujar un cofre en la pantalla 0,4 o 1,0 con animacion
 function dibujar_cofre(screen_x, screen_y, freson_x, freson_y)
-    local cofre_abierto = false
+  local cofre_abierto = false
 
-    -- coordenadas del cofre en cada pantalla
-    local cofres = {
-        { x = 64, y = 96, screen_x = 0, screen_y = 4 }, -- cofre en pantalla 0,4
-        { x = 32, y = 48, screen_x = 1, screen_y = 0 } -- cofre en pantalla 1,0
-    }
+  -- coordenadas del cofre en cada pantalla
+  local cofres = {
+    { x = 64, y = 96, screen_x = 0, screen_y = 4 }, -- cofre en pantalla 0,4
+    { x = 32, y = 48, screen_x = 1, screen_y = 0 } -- cofre en pantalla 1,0
+  }
 
-    -- recorrer cofres y dibujar segun pantalla
-    for cofre in all(cofres) do
-        -- dibujar el cofre si estan en la pantalla actual
-        if screen_x == cofre.screen_x and screen_y == cofre.screen_y then
-            -- elegir sprites segun el estado (cerrado o abierto)
-            local sprite_base = cofre_abierto and 84 or 82
-            spr(sprite_base, cofre.x, cofre.y)
-            spr(sprite_base + 1, cofre.x + 8, cofre.y)
-            spr(sprite_base + 16, cofre.x, cofre.y + 8)
-            spr(sprite_base + 17, cofre.x + 8, cofre.y + 8)
+  -- recorrer cofres y dibujar segun pantalla
+  for cofre in all(cofres) do
+    -- dibujar el cofre si estan en la pantalla actual
+    if screen_x == cofre.screen_x and screen_y == cofre.screen_y then
+      -- elegir sprites segun el estado (cerrado o abierto)
+      local sprite_base = cofre_abierto and 84 or 82
+      spr(sprite_base, cofre.x, cofre.y)
+      spr(sprite_base + 1, cofre.x + 8, cofre.y)
+      spr(sprite_base + 16, cofre.x, cofre.y + 8)
+      spr(sprite_base + 17, cofre.x + 8, cofre.y + 8)
 
-            -- verificar colision con el freson
-            if abs(freson_x - cofre.x) < 16 and abs(freson_y - cofre.y) < 16 then
-                cofre_abierto = true -- abre el cofre si el freson lo toca
-            end
-        end
+      -- verificar colision con el freson
+      if abs(freson_x - cofre.x) < 16 and abs(freson_y - cofre.y) < 16 then
+        cofre_abierto = true -- abre el cofre si el freson lo toca
+      end
     end
+  end
 end
 
 -- freson
 function make_freson()
-    local e = make_entity(
-        64,
-        64
-    )
-    e.s = 1
-    e.fh = true
-    e.fr = {
-        walk = { 1, 3, 5 },
-        idle = { 1 },
-        mordisco = { 7, 9 }
-    }
-    e.w = 16
-    e.h = 16
-    e.mord_time = 0
-    e.cofre1 = false
+  local e = make_entity(
+    64,
+    64
+  )
+  e.s = 1
+  e.fh = true
+  e.fr = {
+    walk = { 1, 3, 5 },
+    idle = { 1 },
+    mordisco = { 7, 9 }
+  }
+  e.w = 16
+  e.h = 16
+  e.mord_time = -1
+  e.cofre1 = false
 
-    local idle = "idle"
-    local walk = "walk"
-    local mordisco = "mordisco"
-    e.stat = idle
+  local idle = "idle"
+  local walk = "walk"
+  local mordisco = "mordisco"
+  e.stat = idle
 
-    local velfreson = 1.25
+  local velfreson = 1.25
 
-    e.upd = function()
-        if (e.mord_time > 0) then
-            e.stat = mordisco
-            e.mord_time -= 1
-        else
-            e.stat = idle
-        end
-        e.dx = 0
-        e.dy = 0
+  e.upd = function()
+    if (e.mord_time > 0) then
+      e.stat = mordisco
+      e.mord_time -= 1
+    elseif (e.mord_time == 0) then
+      e.mord_time = -1
+      deli(mordiscos, 1)
+    else
+      e.stat = idle
+    end
+    e.dx = 0
+    e.dy = 0
 
-        if btnp(🅾️) and #ladridos < 1 and e.stat != mordisco then
-            e.stat = mordisco
-            e.s = 1
-            e.mord_time = 10
-            make_mordisco(e.x, e.y, e.w, e.h)
-        end
-
-        if btn(⬅️) and e.stat != mordisco then
-            e.fh = false
-            e.stat = walk
-            e.dx = -velfreson
-        end
-
-        if btn(➡️) and e.stat != mordisco then
-            e.fh = true
-            e.stat = walk
-            e.dx = velfreson
-        end
-
-        if btn(⬆️) and e.stat != mordisco then
-            e.stat = walk
-            e.dy = -velfreson
-        end
-
-        if btn(⬇️) and e.stat != mordisco then
-            e.stat = walk
-            e.dy = velfreson
-        end
-
-        -- verificar colisiones antes de mover
-        if not hay_colision(e.x + e.dx, e.y + e.h / 2, e.w, e.h / 2) then
-            e.x += e.dx
-        end
-        if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
-            e.y += e.dy
-        end
-
-        if btnp(❎) and #ladridos < 1 and e.stat != mordisco then
-            make_ladrido(e.x, e.y)
-        end
+    if btnp(🅾️) and #ladridos < 1 and e.stat != mordisco then
+      e.stat = mordisco
+      e.s = 1
+      e.mord_time = 10
+      make_mordisco(e.x, e.y, e.w, e.h)
     end
 
-    e.drw = function()
-        local sps = e.fr[e.stat]
-        if e.stat == walk or e.stat == idle then
-            e.s += .3
-        else
-            e.s += .2
-        end
-
-        if flr(e.s) > #sps then
-            e.s = 1
-        end
-
-        palt(0, false)
-        palt(11, true)
-        --dibujar freson
-        if (e.stat == idle or e.stat == walk) then
-            spr(sps[flr(e.s)], e.x, e.y, 2, 2, e.fh)
-        else
-            if (e.fh == true) then
-                spr(sps[flr(e.s)], e.x + 6, e.y, 2, 2, e.fh)
-            else
-                spr(sps[flr(e.s)], e.x - 6, e.y, 2, 2, e.fh)
-            end
-        end
-        --rect(e.x + 2, e.y + e.h / 2, e.x + e.w - 4, e.y + e.h, 0)
-        palt()
+    if btn(⬅️) and e.stat != mordisco then
+      e.fh = false
+      e.stat = walk
+      e.dx = -velfreson
     end
 
-    return e
+    if btn(➡️) and e.stat != mordisco then
+      e.fh = true
+      e.stat = walk
+      e.dx = velfreson
+    end
+
+    if btn(⬆️) and e.stat != mordisco then
+      e.stat = walk
+      e.dy = -velfreson
+    end
+
+    if btn(⬇️) and e.stat != mordisco then
+      e.stat = walk
+      e.dy = velfreson
+    end
+
+    -- verificar colisiones antes de mover
+    if not hay_colision(e.x + e.dx, e.y + e.h / 2, e.w, e.h / 2) then
+      e.x += e.dx
+    end
+    if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
+      e.y += e.dy
+    end
+
+    if btnp(❎) and #ladridos < 1 and e.stat != mordisco then
+      make_ladrido(e.x, e.y)
+    end
+  end
+
+  e.drw = function()
+    local sps = e.fr[e.stat]
+    if e.stat == walk or e.stat == idle then
+      e.s += .3
+    else
+      e.s += .2
+    end
+
+    if flr(e.s) > #sps then
+      e.s = 1
+    end
+
+    palt(0, false)
+    palt(11, true)
+    --dibujar freson
+    if (e.stat == idle or e.stat == walk) then
+      spr(sps[flr(e.s)], e.x, e.y, 2, 2, e.fh)
+    else
+      if (e.fh == true) then
+        spr(sps[flr(e.s)], e.x + 6, e.y, 2, 2, e.fh)
+      else
+        spr(sps[flr(e.s)], e.x - 6, e.y, 2, 2, e.fh)
+      end
+    end
+    --rect(e.x + 2, e.y + e.h / 2, e.x + e.w - 4, e.y + e.h, 0)
+    palt()
+  end
+
+  return e
 end
 
 -- funcion para crear un ladrido (ondas concentricas)
 function make_ladrido(x, y)
-    hambre -= 5
-    local l = {}
-    l.x = x
-    -- posicion del ladrido
-    l.y = y
-    l.r1 = 5
-    -- radio del circulo exterior
-    l.r2 = 3
-    -- radio del circulo interior
-    add(ladridos, l)
+  hambre -= 5
+  local l = {}
+  l.x = x
+  -- posicion del ladrido
+  l.y = y
+  l.r1 = 5
+  -- radio del circulo exterior
+  l.r2 = 3
+  -- radio del circulo interior
+  add(ladridos, l)
 end
 
 function make_mordisco(x, y, w, h)
-    hambre -= 10
-    local m = {}
-    m.x = x
-    m.y = y
-    m.w = w
-    m.h = h
-    add(mordiscos, m)
+  hambre -= 10
+  local m = {}
+  m.x = x
+  m.y = y
+  m.w = w
+  m.h = h
+  add(mordiscos, m)
 end
 
 -- chorro
 function make_chorro(x, y)
-    local e = make_entity(x, y)
-    local sp_mord = {
-        7, 9, 23, 25
-    }
-    e.name = "chorro"
-    e.s = 1
-    e.fh = false
-    e.fr = {
-        walk = { 35, 37 },
-        idle = { 33 }
-    }
-    e.stun = 30
-    e.w = 8
-    e.h = 14
+  local e = make_entity(x, y)
+  e.name = "chorro"
+  e.s = 1
+  e.fh = false
+  e.fr = {
+    walk = { 35, 37 },
+    idle = { 33 }
+  }
+  e.stun = 30
+  e.w = 8
+  e.h = 14
 
-    local idle = "idle"
-    local walk = "walk"
-    e.stat = walk
+  local idle = "idle"
+  local walk = "walk"
+  e.stat = walk
 
-    local velchorro = 0.5
+  local velchorro = 0.5
 
-    e.upd = function()
-        if (e.x >= camx and e.x <= camx + 127 and e.y >= camy and e.y <= camy + 127) then
-            if (e.stat != idle) then
-                e.stat = walk
-                if (e.x < flr(jug.x)) then
-                    e.fh = true
-                    e.dx = velchorro
-                end
-                if (e.x > flr(jug.x)) then
-                    e.fh = false
-                    e.dx = -velchorro
-                end
-                if (e.y > flr(jug.y)) then
-                    e.dy = -velchorro
-                end
-                if (e.y < flr(jug.y)) then
-                    e.dy = velchorro
-                end
-                if (jug.stat == "mordisco") then
-                    if colision_mordisco(e.x, e.y, e.w, e.h) then
-                        e.stat = idle
-                        e.stun = 60
-                    end
-                end
-
-                -- checkeo doble por si cambia estado dentro de if
-                if (e.stat != idle) then
-                    -- verificar colisiones antes de mover
-                    if not hay_colision(e.x + e.dx, e.y + e.h / 2, e.x + e.w / 2, e.h / 2) then
-                        e.x += e.dx
-                    end
-                    if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
-                        e.y += e.dy
-                    end
-                end
-            elseif (e.stun > 0) then
-                e.stun -= 1
-            elseif (e.stun == 0) then
-                e.stat = walk
-            end
-
-            for l in all(ladridos) do
-                if dist(l.x + jug.w / 2, l.y + jug.h / 2, e.x, e.y, l.r1) then
-                    e.stat = idle
-                    e.stun = 30
-                end
-            end
+  e.upd = function()
+    if (e.x >= camx and e.x <= camx + 127 and e.y >= camy and e.y <= camy + 127) then
+      if (e.stat != idle) then
+        e.stat = walk
+        if (e.x < flr(jug.x)) then
+          --printh("der_e.x: "..e.x.." jug.x: "..jug.x)
+          e.fh = true
+          --printh("der_e.dx: "..e.dx)
+          e.dx = velchorro
+          --printh("der_e.dx2: "..e.dx)
         end
+        if (e.x > flr(jug.x)) then
+          --printh("izq_e.x: "..e.x.." jug.x: "..jug.x)
+          e.fh = false
+          --printh("izq_e.dx: "..e.dx)
+          e.dx = -velchorro
+          --printh("izq_e.dx2: "..e.dx)
+        end
+        if (e.y > flr(jug.y)) then
+          e.dy = -velchorro
+        end
+        if (e.y < flr(jug.y)) then
+          e.dy = velchorro
+        end
+        if (jug.stat == "mordisco") then
+          if colision_mordisco(e.x, e.y, e.w, e.h) then
+            e.stat = idle
+            e.stun = 60
+          end
+        end
+
+        -- checkeo doble por si cambia estado dentro de if
+        if (e.stat != idle) then
+          -- verificar colisiones antes de mover
+          if not hay_colision(e.x + e.dx, e.y + e.h / 2, e.w / 2, e.h / 2) then
+            e.x += e.dx
+          end
+          if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
+            e.y += e.dy
+          end
+        end
+      elseif (e.stun > 0) then
+        e.stun -= 1
+      elseif (e.stun == 0) then
+        e.stat = walk
+      end
+
+      for l in all(ladridos) do
+        if dist(l.x + jug.w / 2, l.y + jug.h / 2, e.x, e.y, l.r1) then
+          e.stat = idle
+          e.stun = 30
+        end
+      end
     end
+  end
 
-    e.drw = function()
-        if (e.x >= camx and e.x <= camx + 127 and e.y >= camy and e.y <= camy + 127) then
-            local sps = e.fr[e.stat]
-            e.s += .1
+  e.drw = function()
+    if (e.x >= camx and e.x <= camx + 127 and e.y >= camy and e.y <= camy + 127) then
+      local sps = e.fr[e.stat]
+      e.s += .1
 
-            if flr(e.s) > #sps then
-                e.s = 1
-            end
-            --dibujar chorro
-            palt(0, false)
-            palt(11, true)
-            spr(
-                sps[flr(e.s)],
-                e.x,
-                e.y,
-                2, 2,
-                e.fh
-            )
-            --[[ if (e.fh == false) then
+      if flr(e.s) > #sps then
+        e.s = 1
+      end
+      --dibujar chorro
+      palt(0, false)
+      palt(11, true)
+      spr(
+        sps[flr(e.s)],
+        e.x,
+        e.y,
+        2, 2,
+        e.fh
+      )
+      --[[ if (e.fh == false) then
                 rect(e.x + 2,
                  e.y + e.h / 2 + 1,
                  e.x + e.w,
@@ -526,72 +526,72 @@ function make_chorro(x, y)
                     e.y + e.h,
                     0)
             end ]]
-            palt()
-        end
+      palt()
     end
+  end
 
-    return e
+  return e
 end
 
 -->8
 -- capas
 function ini_bosque()
-    arboles = {}
-    piedras = {}
+  arboles = {}
+  piedras = {}
 
-    for i = 1, 10 do
-        add(
-            arboles, {
-                x = flr(rnd(128)),
-                y = flr(rnd(128)),
-                c = 27
-            }
-        )
-    end
+  for i = 1, 10 do
+    add(
+      arboles, {
+        x = flr(rnd(128)),
+        y = flr(rnd(128)),
+        c = 27
+      }
+    )
+  end
 
-    for i = 1, 10 do
-        add(
-            piedras, {
-                x = flr(rnd(128)),
-                y = flr(rnd(128)),
-                c = 43
-            }
-        )
-    end
+  for i = 1, 10 do
+    add(
+      piedras, {
+        x = flr(rnd(128)),
+        y = flr(rnd(128)),
+        c = 43
+      }
+    )
+  end
 end
 
 function drw_bosque()
-    for a in all(arboles) do
-        a.y += a.c - 4.5
+  for a in all(arboles) do
+    a.y += a.c - 4.5
 
-        if (a.y > 140) then
-            a.y = -1
-            a.x = flr(rnd(128))
-        end
+    if (a.y > 140) then
+      a.y = -1
+      a.x = flr(rnd(128))
     end
+  end
 
-    for p in all(piedras) do
-        p.y += p.c - 4.5
+  for p in all(piedras) do
+    p.y += p.c - 4.5
 
-        if (p.y > 140) then
-            p.y = -1
-            p.x = flr(rnd(128))
-        end
+    if (p.y > 140) then
+      p.y = -1
+      p.x = flr(rnd(128))
     end
+  end
 end
 -->8
 -- enemigos
 function ini_enemigos(num)
-    enes = {}
-    make_enemy(1)
+  enes = {}
+  make_enemy(1)
 end
 
 function make_enemy(num)
-    local e = make_chorro(camx + flr(rnd(100)), camy + flr(rnd(100)))
+  local e = make_chorro(camx + flr(rnd(72) + 24), camy + flr(rnd(72) + 24))
 
-    add(enes, e)
+  add(enes, e)
 
-    return e
+  return e
 end
 
 __gfx__
@@ -603,7 +603,7 @@ __gfx__
 00700700bf4949949f666f49b990ff0999666f49990ff09996666f4bb777f9f444666f49b444f9f444666f490000000000000000000000000000000000000000
 00000000b9f990099f64444fb4949949f64444444949949f6444444fbbbb9ff444444444b7774ff4444444440000000000000000000000000000000000000000
 00000000bb4f4444ff44444fbf990099f644444ff990099f6444444fbbee9f944464444fb4449f944464444f0000000000000000000000000000000000000000
-00000000bb66f9fff4444449b4f4444ff44444444f4444ff44444444bee4f99466444444bf9ff994664444440000000000000000000000000000000000000000
+00000000bb66f9fff4444449b4f4444ff44444444f4444ff44444444eee4f99466444444bf9ff994664444440000000000000000000000000000000000000000
 00000000bbb444444444444bbb6f9fff4444444bb6f9fff44444444fb44f99444444444bbf9999444444444b0000000000000000000000000000000000000000
 00000000bbb544444444444bbb44444444544449b944444444444449bf99444444444445bfff4444444444450000000000000000000000000000000000000000
 00000000bbb5444445544449bb44444445b5444bbb4444444554444bbb44444445544449bb444444455444490000000000000000000000000000000000000000
@@ -822,7 +822,7 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001010101010100000000000000000000000000010101010000000001010101000000000000010000010000010000000000000000000101000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010101010000000001010101000000000000010000010000010000000000000000000101000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 4747474747474747474747474747474747474747474747474747474747474747000000000000000000000000000000004646464646464646464646464646464740404040404040404040404040404040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
