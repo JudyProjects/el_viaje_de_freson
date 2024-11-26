@@ -8,8 +8,6 @@ hambre_perdida_quieto = 0.1
 hambre_perdida_correr = 0.2
 
 function _init()
-  printh("== == ==")
-  printh("iniciando juego")
   cnt = 0
   debug = false
   estado = "inicio"
@@ -100,7 +98,6 @@ function jug_ini()
 
   make_cofre(32, 220, 0, 4, 1)
   make_cofre(400, 35, 1, 0, 2)
-
 end
 
 function jug_upd()
@@ -109,7 +106,8 @@ function jug_upd()
   end
 
   cnt += 1
-  tiempo += 1 / 30 -- 30FPS
+  tiempo += 1 / 30
+  -- 30FPS
 
   for e in all(ents) do
     e.upd()
@@ -125,25 +123,27 @@ function jug_upd()
     end
   end
 
-    -- Reducir hambre dependiendo del estado
-    if jug.stat == "walk" then
-        hambre -= hambre_perdida_correr -- Pierde mas hambre al correr
-    else
-        hambre -= hambre_perdida_quieto -- Pierde menos hambre cuando esta quieto
-    end
+  -- Reducir hambre dependiendo del estado
+  if jug.stat == "walk" then
+    hambre -= hambre_perdida_correr -- Pierde mas hambre al correr
+  else
+    hambre -= hambre_perdida_quieto -- Pierde menos hambre cuando esta quieto
+  end
 
-    -- Prevenir que hambre sea negativa
-    if hambre <= 0 then
-        chgestado("fin")
-    end
+  -- Prevenir que hambre sea negativa
+  if hambre <= 0 then
+    chgestado("fin")
+  end
 
-    if(camx >= 512 and jug.y <= 80) then
+  if (camx >= 512 and jug.y <= 80) then
     jug.llego_casa = true
     chgestado("fin")
-    end
+  end
 
-    printh(hambre .. " " .. tostring(jug.llave1) .. " " .. tostring(jug.llave2) .. " " .. tostring(jug.llego_casa))
-
+  -- Prevenir que hambre sea negativa
+  if hambre <= 0 then
+    chgestado("fin")
+  end
 end
 
 function jug_drw()
@@ -191,18 +191,18 @@ end
 function fin_ini()
   music(-1)
 
-    -- Mensajes predefinidos para el estado "Fin"
-    if hambre <= 0 then
-        f_msg = "\#8\f7\^w\^ perdiste"
-        f_mx = 36 -- Centrado para el mensaje de partida
-    elseif jug.llego_casa then
-        f_msg = "\#3\f7llegaste a casa freson"
-        f_mx = 50 - 26
-    else
-        f_msg = "\#3\f7fin del juego"
-        f_mx = 63 - 26
-    end
-    f_my = 58
+  -- Mensajes predefinidos para el estado "Fin"
+  if hambre <= 0 then
+    f_msg = "\#8\f7\^w\^ perdiste"
+    f_mx = 36 -- Centrado para el mensaje de partida
+  elseif jug.llego_casa then
+    f_msg = "\#3\f7llegaste a casa freson"
+    f_mx = 50 - 26
+  else
+    f_msg = "\#3\f7fin del juego"
+    f_mx = 63 - 26
+  end
+  f_my = 58
 end
 
 function fin_upd()
@@ -217,7 +217,7 @@ function fin_drw()
   cls(0)
 
   print(f_msg, f_mx, f_my)
-  print("\#e\f1❎+🅾️ para volver", 33, 122)
+  print("\#e\f7❎+🅾️ para volver", 33, 122)
 end
 
 -->8
@@ -240,33 +240,33 @@ end
 
 -- Verificar colision  en el mapa
 function hay_colision(x, y, w, h)
-	-- Verifica las esquinas del area
-    local esquinas = {
-        {x, y}, -- Esquina superior izquierda
-        {x + w - 1, y}, -- Esquina superior derecha
-        {x, y + h - 1}, -- Esquina inferior izquierda
-        {x + w - 1, y + h - 1} -- Esquina inferior derecha
-    }
+  -- Verifica las esquinas del area
+  local esquinas = {
+    { x, y }, -- Esquina superior izquierda
+    { x + w - 1, y }, -- Esquina superior derecha
+    { x, y + h - 1 }, -- Esquina inferior izquierda
+    { x + w - 1, y + h - 1 } -- Esquina inferior derecha
+  }
 
-    for esquina in all(esquinas) do
-        local celx = flr(esquina[1] / 8)
-        local cely = flr(esquina[2] / 8)
-        local sprite = mget(celx, cely)
-        if fget(sprite, 0) then
-            return true
-        end
+  for esquina in all(esquinas) do
+    local celx = flr(esquina[1] / 8)
+    local cely = flr(esquina[2] / 8)
+    local sprite = mget(celx, cely)
+    if fget(sprite, 0) then
+      return true
     end
-    return false
+  end
+  return false
 end
 
 function desbloquear_puerta_1()
-    fset(105, 0, false)
-    fset(106, 0, false)
-    fset(107, 0, false)
+  fset(105, 0, false)
+  fset(106, 0, false)
+  fset(107, 0, false)
 end
 
 function desbloquear_puerta_2()
-    fset(117, 0, false)
+  fset(117, 0, false)
 end
 
 function colision_mordisco(x, y, w, h)
@@ -310,46 +310,60 @@ end
 
 -- Dibujar el tiempo regresivo
 function dibujar_tiempo()
-    local tiempo_restante = max(0, 90 - tiempo) -- Tiempo restante en segundos (5 minutos = 300 segundos)
-    local minutos = flr(tiempo_restante / 60)
-    local segundos = tiempo_restante % 60
+  local tiempo_restante = max(0, 90 - tiempo)
+  -- Tiempo restante en segundos (5 minutos = 300 segundos)
+  local minutos = flr(tiempo_restante / 60)
+  local segundos = tiempo_restante % 60
 
-    -- Mostrar tiempo en formato MM:SS
-    print("tiempo: " .. minutos .. ":" .. (segundos < 10 and "0" or "") .. flr(segundos), 0, 0, 7)
+  -- Mostrar tiempo en formato MM:SS
+  print("tiempo: " .. minutos .. ":" .. (segundos < 10 and "0" or "") .. flr(segundos), 0, 0, 7)
 end
 
 function dibujar_hambre()
-    local sprites_inicio = 119 -- El indice del sprite de hambre completo
-    local sprites_fin = 124   -- El indice del sprite de hambre vacio
-    local nivel_sprite_max = sprites_fin - sprites_inicio + 1 -- Total de niveles de hambre
+  local sprites_inicio = 119
+  -- El indice del sprite de hambre completo
+  local sprites_fin = 124
+  -- El indice del sprite de hambre vacio
+  local nivel_sprite_max = sprites_fin - sprites_inicio + 1
+  -- Total de niveles de hambre
 
-    -- Calcular el sprite a mostrar basado en el hambre
-    local hambre_max = 500
-    local nivel_sprite = flr((hambre_max - hambre) / (hambre_max / nivel_sprite_max)) + 1
-    if nivel_sprite > nivel_sprite_max then
-        nivel_sprite = nivel_sprite_max -- Limitar al maximo nivel
-    elseif nivel_sprite < 0 then
-        nivel_sprite = 0 -- Limitar al minimo nivel
-    end
+  -- Calcular el sprite a mostrar basado en el hambre
+  local hambre_max = 500
+  local nivel_sprite = flr((hambre_max - hambre) / (hambre_max / nivel_sprite_max)) + 1
+  if nivel_sprite > nivel_sprite_max then
+    nivel_sprite = nivel_sprite_max -- Limitar al maximo nivel
+  elseif nivel_sprite < 0 then
+    nivel_sprite = 0 -- Limitar al minimo nivel
+  end
 
-    -- Dibujar el sprite correspondiente
-    spr(sprites_inicio + nivel_sprite - 1, 120, 0)
+  -- Dibujar el sprite correspondiente
+  spr(sprites_inicio + nivel_sprite - 1, 120, 0)
 end
 
 function dibujar_llaves(freson)
-    -- Coordenadas iniciales para los iconos de las llaves
-    local x_inicial = 100
-    local y_inicial = 0
+  -- Coordenadas iniciales para los iconos de las llaves
+  local x_inicial = 100
+  local y_inicial = 0
 
-    if freson.llave1 then
-        spr(125, x_inicial, y_inicial)
-    end
+  if freson.llave1 then
+    spr(125, x_inicial, y_inicial)
+  end
 
-    if freson.llave2 then
-        spr(125, x_inicial + 10 , y_inicial)
-    end
+  if freson.llave2 then
+    spr(125, x_inicial + 10, y_inicial)
+  end
 end
 
+function verificar_muerte()
+  if (jug.en_colision == true) then
+    jug.cnt_colision += 1
+    printh(jug.cnt_colision)
+    if (jug.cnt_colision >= 35) then
+      hambre = 0
+      chgestado("fin")
+    end
+  end
+end
 
 -- freson
 function make_freson()
@@ -370,6 +384,8 @@ function make_freson()
   e.llave1 = false
   e.llave2 = false
   e.llego_casa = false
+  e.en_colision = false
+  e.cnt_colision = 0
 
   local idle = "idle"
   local walk = "walk"
@@ -391,6 +407,7 @@ function make_freson()
     e.dx = 0
     e.dy = 0
 
+    verificar_muerte()
     if btnp(🅾️) and #ladridos < 1 and e.stat != mordisco then
       e.stat = mordisco
       e.s = 1
@@ -457,7 +474,6 @@ function make_freson()
         spr(sps[flr(e.s)], e.x - 6, e.y, 2, 2, e.fh)
       end
     end
-    --rect(e.x + 2, e.y + e.h / 2, e.x + e.w - 4, e.y + e.h, 0)
     palt()
   end
 
@@ -465,91 +481,97 @@ function make_freson()
 end
 
 function make_cofre(x, y, screen_x, screen_y, llave_id)
-    local cofre = make_entity(x, y)
-    cofre.s_cerrado = 82
-    cofre.s_abierto = 84
-    cofre.llave_id = llave_id
-    cofre.abierto = false
-    cofre.visible = true
-    cofre.w = 16
-    cofre.h = 16
-    cofre.screen_x = screen_x
-    cofre.screen_y = screen_y
+  local cofre = make_entity(x, y)
+  cofre.s_cerrado = 82
+  cofre.s_abierto = 84
+  cofre.llave_id = llave_id
+  cofre.abierto = false
+  cofre.visible = true
+  cofre.w = 16
+  cofre.h = 16
+  cofre.screen_x = screen_x
+  cofre.screen_y = screen_y
 
-    cofre.drw = function(screen_x, screen_y)
-        if cofre.visible then
-            local spr_x = cofre.abierto and cofre.s_abierto or cofre.s_cerrado
-            spr(spr_x, cofre.x, cofre.y, 2, 2)
-        end
+  cofre.drw = function(screen_x, screen_y)
+    if cofre.visible then
+      local spr_x = cofre.abierto and cofre.s_abierto or cofre.s_cerrado
+      spr(spr_x, cofre.x, cofre.y, 2, 2)
     end
+  end
 
-    cofre.upd = function(screen_x, screen_y)
-        if cofre.visible and
-           not cofre.abierto and colisiona(jug, cofre) then
-            cofre.abierto = true -- Cambiar estado a abierto
-            cofre.visible = false -- Ocultar el cofre tras abrirlo
-            local llave = make_llave(cofre.x, cofre.y - 16, cofre.screen_x, cofre.screen_y, cofre.llave_id)
-            add(ents, llave)
+  cofre.upd = function(screen_x, screen_y)
+    if cofre.visible
+        and not cofre.abierto and colisiona(jug, cofre) then
+      cofre.abierto = true -- Cambiar estado a abierto
+      cofre.visible = false -- Ocultar el cofre tras abrirlo
+      local llave = make_llave(cofre.x, cofre.y - 16, cofre.screen_x, cofre.screen_y, cofre.llave_id)
+      add(ents, llave)
     end
-end
-    return cofre
+  end
+  return cofre
 end
 
 function make_llave(x, y, screen_x, screen_y, llave_id)
-    local llave = make_entity(x, y)
-    llave.sprites = {74, 75, 90, 91}
-    llave.llave_id = llave_id
-    llave.collected = false
-    llave.visible = true
-    llave.w = 16-- Ancho de la llave
-    llave.h = 16 -- Alto de la llave
-    llave.screen_x = screen_x
-    llave.screen_y = screen_y
+  local llave = make_entity(x, y)
+  llave.sprites = { 74, 75, 90, 91 }
+  llave.llave_id = llave_id
+  llave.collected = false
+  llave.visible = true
+  llave.w =
+    -- Ancho de la llave
+    16
+  llave.h = 16
+  -- Alto de la llave
+  llave.screen_x = screen_x
+  llave.screen_y = screen_y
 
-    llave.drw = function(screen_x, screen_y)
-        if llave.visible then
-            spr(llave.sprites[1], llave.x, llave.y)         -- Esquina superior izquierda
-            spr(llave.sprites[2], llave.x + 8, llave.y)      -- Esquina superior derecha
-            spr(llave.sprites[3], llave.x, llave.y + 8)      -- Esquina inferior izquierda
-            spr(llave.sprites[4], llave.x + 8, llave.y + 8)  -- Esquina inferior derecha
-        end
+  llave.drw = function(screen_x, screen_y)
+    if llave.visible then
+      spr(llave.sprites[1], llave.x, llave.y) -- Esquina superior izquierda
+      spr(llave.sprites[2], llave.x + 8, llave.y) -- Esquina superior derecha
+      spr(llave.sprites[3], llave.x, llave.y + 8) -- Esquina inferior izquierda
+      spr(llave.sprites[4], llave.x + 8, llave.y + 8) -- Esquina inferior derecha
     end
+  end
 
-    llave.upd = function(screen_x, screen_y)
-        if not llave.collected and colisiona(jug, llave) then
-            llave.collected = true -- Marcar la llave como recogida
-            llave.visible = false -- Desaparece la llave
-            -- Actualizar el estado en `freson`
-            if llave.llave_id == 1 then
-                jug.llave1 = true
-            elseif llave.llave_id == 2 then
-                jug.llave2 = true
-            end
-            if (jug.llave1) then
-                desbloquear_puerta_1()
-            end
-            if (jug.llave2) then
-                desbloquear_puerta_2()
-            end
-        end
+  llave.upd = function(screen_x, screen_y)
+    if not llave.collected and colisiona(jug, llave) then
+      llave.collected = true -- Marcar la llave como recogida
+      llave.visible = false -- Desaparece la llave
+      -- Actualizar el estado en `freson`
+      if llave.llave_id == 1 then
+        jug.llave1 = true
+      elseif llave.llave_id == 2 then
+        jug.llave2 = true
+      end
+      if jug.llave1 == true then
+        desbloquear_puerta_1()
+      end
+      if jug.llave2 == true then
+        desbloquear_puerta_2()
+      end
     end
-    return llave
+  end
+  return llave
 end
 
+function colisiona_chorro(ch)
+    if (jug.x < ch.x + ch.w
+          and jug.x + jug.w > ch.x
+          and jug.y < ch.y + ch.h
+          and jug.y + jug.h > ch.y) then
+      jug.en_colision = true
+    else
+      jug.en_colision = false
+      jug.cnt_colision = 0
+    end
+end
 
 function colisiona(ent1, ent2)
-    return ent1.x < ent2.x + ent2.w and
-           ent1.x + ent1.w > ent2.x and
-           ent1.y < ent2.y + ent2.h and
-           ent1.y + ent1.h > ent2.y
-end
-
-function obtener_pantalla_actual_x()
-    return flr(camx / 128)
-end
-
-function obtener_pantalla_actual_y()
-    return flr(camy / 128)
+  return ent1.x < ent2.x + ent2.w
+      and ent1.x + ent1.w > ent2.x
+      and ent1.y < ent2.y + ent2.h
+      and ent1.y + ent1.h > ent2.y
 end
 
 -- funcion para crear un ladrido (ondas concentricas)
@@ -601,18 +623,12 @@ function make_chorro(x, y)
       if (e.stat != idle) then
         e.stat = walk
         if (e.x < flr(jug.x)) then
-          --printh("der_e.x: "..e.x.." jug.x: "..jug.x)
           e.fh = true
-          --printh("der_e.dx: "..e.dx)
           e.dx = velchorro
-          --printh("der_e.dx2: "..e.dx)
         end
         if (e.x > flr(jug.x)) then
-          --printh("izq_e.x: "..e.x.." jug.x: "..jug.x)
           e.fh = false
-          --printh("izq_e.dx: "..e.dx)
           e.dx = -velchorro
-          --printh("izq_e.dx2: "..e.dx)
         end
         if (e.y > flr(jug.y)) then
           e.dy = -velchorro
@@ -636,6 +652,7 @@ function make_chorro(x, y)
           if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
             e.y += e.dy
           end
+          colisiona_chorro(e)
         end
       elseif (e.stun > 0) then
         e.stun -= 1
@@ -1010,7 +1027,7 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010101010000000001010101000000000000010000010000010000000000000000000101000101010000010100000000000101000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000101010101010000000000000000000001010101010100000000000000000000000000010101010000000001010101000000000000010000010000010000000000000000000101000101010000010100000000000101000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
