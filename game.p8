@@ -8,115 +8,123 @@ hambre_perdida_quieto = 0.1
 hambre_perdida_correr = 0.2
 
 function _init()
-    printh("== == ==")
-    printh("iniciando juego")
-    cnt = 0
-    debug = false
-    estado = "inicio"
-    tblestados = {
-        inicio = {
-            ini = ini_ini,
-            upd = ini_upd,
-            drw = ini_drw
-        },
-        juego = {
-            ini = jug_ini,
-            upd = jug_upd,
-            drw = jug_drw
-        },
-        fin = {
-            ini = fin_ini,
-            upd = fin_upd,
-            drw = fin_drw
-        }
+  printh("== == ==")
+  printh("iniciando juego")
+  cnt = 0
+  debug = false
+  estado = "inicio"
+  tblestados = {
+    inicio = {
+      ini = ini_ini,
+      upd = ini_upd,
+      drw = ini_drw
+    },
+    juego = {
+      ini = jug_ini,
+      upd = jug_upd,
+      drw = jug_drw
+    },
+    fin = {
+      ini = fin_ini,
+      upd = fin_upd,
+      drw = fin_drw
     }
-    chgestado(estado)
+  }
+  chgestado(estado)
 end
 
 function chgestado(est)
-    estado = est
+  estado = est
 
-    tblestados[estado].ini()
-    _update = tblestados[estado].upd
-    _draw = tblestados[estado].drw
+  tblestados[estado].ini()
+  _update = tblestados[estado].upd
+  _draw = tblestados[estado].drw
 end
 
 function dist(x0, y0, x1, y1, radio)
-    local puntoJug, puntoEnt = (x0 - x1) ^ 2, (y0 - y1) ^ 2
-    return radio ^ 2 <= puntoJug + puntoEnt
+  return (((x1 - x0) ^ 2) + ((y1 - y0) ^ 2)) <= radio ^ 2
 end
 
 function ini_ini()
-    -- capa de fondo
-    ini_bosque()
+  -- capa de fondo
+  ini_bosque()
 
-    i_tmp = 30
+  i_tmp = 30
 end
 
 function ini_upd()
-    if (i_tmp > 0) i_tmp -= 1
-    if (i_tmp <= 0) then
-        if (btn(❎) and btn(🅾️)) then
-            chgestado("juego")
-        end
+  drw_bosque()
+  if (i_tmp > 0) i_tmp -= 1
+  if (i_tmp <= 0) then
+    if (btn(❎) and btn(🅾️)) then
+      chgestado("juego")
     end
-	--[[ chgestado("juego") ]]
+  end
 end
 
 function ini_drw()
-    cls()
+  cls()
 
-    drw_bosque()
-    palt(0, false)
-    palt(10, true)
-    spr(132, 63 - 16, 33 - 16, 4, 4)
-    spr(128, 63 - 16, 63 - 16, 4, 4)
-    palt()
-    if (i_tmp <= 0) then
-        print("\#9\f7❎+🅾️ para empezar", 29, 122)
-    end
-    cnt = 0
+  drw_bosque()
+  palt(0, false)
+  palt(10, true)
+  spr(132, 63 - 16, 33 - 16, 4, 4)
+  spr(128, 63 - 16, 63 - 16, 4, 4)
+  palt()
+  if (i_tmp <= 0) then
+    print("\#0\f9❎+🅾️ para empezar", 29, 118)
+  end
+  cnt = 0
 end
 
 function jug_ini()
-    ents = {}
-    chorros = {}
-    ladridos = {}
-    hambre = 500
-    tiempo = 0
+  ents = {}
+  chorros = {}
+  ladridos = {}
+  hambre = 500
+  tiempo = 0
+  mordiscos = {}
+  hambre = 100
+  pant_x = {
+    { false },
+    { false },
+    { false },
+    { false },
+    { false }
+  }
 
-    --setup jugador
-    jug = make_freson()
+  pant_y = {
+    { false },
+    { false }
+  }
 
-    make_cofre(32, 64, 0, 4, 1)
-    make_cofre(96, 96, 1, 0, 2)
+  jug = make_freson()
 
-    --setup chorro
-    ini_enemigos(1)
+  make_cofre(32, 64, 0, 4, 1)
+  make_cofre(96, 96, 1, 0, 2)
 end
 
 function jug_upd()
+  if estado == "fin" then
+    return
+  end
 
-    if estado == "fin" then
-        return
+  cnt += 1
+  tiempo += 1 / 30 -- 30FPS
+
+  for e in all(ents) do
+    e.upd()
+  end
+
+  for l in all(ladridos) do
+    l.r1 += 2 -- el circulo exterior crece
+    l.r2 += 1 -- el circulo interior crece mas lento
+
+    -- eliminar ladrido cuando el circulo exterior supera tamanio
+    if l.r1 > 30 then
+      del(ladridos, l)
     end
-
-    cnt += 1
-    tiempo += 1 / 30 -- 30FPS
-
-    for e in all(ents) do
-        e.upd()
-    end
-
-    for l in all(ladridos) do
-        l.r1 += 2 -- el circulo exterior crece
-        l.r2 += 1 -- el circulo interior crece mas lento
-
-        -- eliminar ladrido cuando el circulo exterior supera tamanio
-        if l.r1 > 30 then
-            del(ladridos, l)
-        end
-    end
+  end
 
     -- Reducir hambre dependiendo del estado
     if jug.stat == "walk" then
@@ -134,40 +142,49 @@ function jug_upd()
 end
 
 function jug_drw()
-    cls()
+  cls()
 
-    camx = flr(jug.x \ 128) * 128
-	camy = flr(jug.y \ 128) * 128
+  camx = flr(jug.x \ 128) * 128
+  camy = flr(jug.y \ 128) * 128
 
-	camera(camx, camy)
+  camera(camx, camy)
 
-	-- Calcular coordenadas de la pantalla
-    screen_x = flr(camx / 128)
-    screen_y = flr(camy / 128)
+  -- calcular coordenadas de la pantalla
+  screen_x = flr(camx / 128)
+  screen_y = flr(camy / 128)
 
-	dibujar_agua(screen_x, screen_y)
-    
-	-- Dibujar el mapa actual
-	map(0, 0, 0, 0, 128, 128)
-    
-    for e in all(ents) do
-        e.drw()
+  --setup chorro
+  if ((pant_x[screen_x + 1][1] and pant_y[screen_y + 1][1]) == false) then
+    if (screen_x == 2 and screen_y == 0) then
+    else
+      ini_enemigos(2)
+      pant_x[screen_x + 1][1] = true
+      pant_y[screen_y + 1][1] = true
     end
-    
-    for l in all(ladridos) do
-        circ(jug.x + 16, jug.y + 8, l.r1, 7) -- circulo exterior
-        circ(jug.x + 16, jug.y + 8, l.r2, 7) -- circulo interior
-    end
-    
-    camera()
-    dibujar_tiempo()
-    dibujar_hambre()
-    dibujar_llaves(jug)
+  end
 
+  dibujar_agua(screen_x, screen_y)
+
+  -- dibujar el mapa actual
+  map(0, 0, 0, 0, 128, 128)
+
+  for e in all(ents) do
+    e.drw()
+  end
+
+  for l in all(ladridos) do
+    circ(jug.x + 8, jug.y + 8, l.r1, 7) -- circulo exterior
+    circ(jug.x + 8, jug.y + 8, l.r2, 7) -- circulo interior
+  end
+
+  camera()
+  dibujar_tiempo()
+  dibujar_hambre()
+  dibujar_llaves(jug)
 end
 
 function fin_ini()
-    music(-1)
+  music(-1)
 
     hambre = 0
 
@@ -183,41 +200,36 @@ function fin_ini()
 end
 
 function fin_upd()
-    jug_upd()
+  jug_upd()
 
-    if btn(❎) and btn(🅾️) then
-        chgestado("inicio")
-    end
+  if btn(❎) and btn(🅾️) then
+    chgestado("inicio")
+  end
 end
 
 function fin_drw()
-    cls(0)
+  cls(0)
 
-    print(f_msg, f_mx, f_my)
-    print("\#e\f1❎+🅾️ para volver", 33, 122)
-end
-
--- Funciれはn para generar una clave れむnica para cada pantalla usando coordenadas
-function coord_key(x, y)
-	return x .. "," .. y
+  print(f_msg, f_mx, f_my)
+  print("\#e\f1❎+🅾️ para volver", 33, 122)
 end
 
 -->8
 -- entidades
 function make_entity(x, y)
-	local e = {}
-	e.x = x
-	e.y = y
-	e.s = 0
-	e.dx = 0
-	e.dy = 0
-	e.fr = nil
-	e.stat = nil
-	e.w = 0
-	e.h = 0
+  local e = {}
+  e.x = x
+  e.y = y
+  e.s = 0
+  e.dx = 0
+  e.dy = 0
+  e.fr = nil
+  e.stat = nil
+  e.w = 0
+  e.h = 0
 
-    add(ents, e)
-    return e
+  add(ents, e)
+  return e
 end
 
 -- Verificar colision  en el mapa
@@ -251,28 +263,43 @@ function desbloquear_puerta_2()
     fset(117, 0, false)
 end
 
-function dibujar_agua(screen_x, screen_y)
-    -- Cambiar colores de la paleta para animar el agua
-    local colores_agua = { 1, 7 } -- Colores del agua
-    local tiempo = flr(t() * 4) % #colores_agua
-    pal(14, colores_agua[tiempo + 1])
-	pal(13, colores_agua[tiempo + 2]) 
-    -- Dibujar agua en la capa adicional solo en la pantalla 3
-    local screen_x = flr(camx / 128)
-    local screen_y = flr(camy / 128)
-
-    if screen_x == 2 and screen_y == 0 then
-        for f = 1, 15 do
-            for c = 0, 15 do
-                local x = c * 8
-                local y = f * 8
-                spr(89, 256 + x, y)
-            end
-        end
+function colision_mordisco(x, y, w, h)
+  for m in all(mordiscos) do
+    rect(m.x, m.y, m.w, m.h, 0)
+    -- verificar colision entre  entidad y mordisco
+    if not (x + w < m.x or x > m.x + m.w
+          or y + h < m.y
+          or y > m.y + m.h) then
+      return true
     end
+  end
 
-    -- Restaurar la paleta al finalizar
-    pal()
+  return false
+end
+
+function dibujar_agua(screen_x, screen_y)
+  -- cambiar colores de la paleta para animar el agua
+  local colores_agua = { 1, 7 }
+  -- colores del agua
+  local tiempo = flr(t() * 4) % #colores_agua
+  pal(14, colores_agua[tiempo + 1])
+  pal(13, colores_agua[tiempo + 2])
+  -- dibujar agua en la capa adicional solo en la pantalla 3
+  local screen_x = flr(camx / 128)
+  local screen_y = flr(camy / 128)
+
+  if screen_x == 2 and screen_y == 0 then
+    for f = 0, 15 do
+      for c = 0, 15 do
+        local x = c * 8
+        local y = f * 8
+        spr(89, 256 + x, y)
+      end
+    end
+  end
+
+  -- restaurar la paleta al finalizar
+  pal()
 end
 
 -- Dibujar el tiempo regresivo
@@ -320,84 +347,114 @@ end
 
 -- freson
 function make_freson()
-	local e = make_entity(
-		64,
-		64
-	)
-	e.s = 1
-	e.fh = true
-	e.fr = {
-		walk = { 1, 3, 5 },
-		idle = { 1 }
-	}
-	e.w = 16
-	e.h = 16
-    e.llave1 = false
-    e.llave2 = false
+  local e = make_entity(
+    64,
+    64
+  )
+  e.s = 1
+  e.fh = true
+  e.fr = {
+    walk = { 1, 3, 5 },
+    idle = { 1 },
+    mordisco = { 7, 9 }
+  }
+  e.w = 16
+  e.h = 16
+  e.mord_time = -1
+  e.llave1 = false
+  e.llave2 = false
 
-    local idle = "idle"
-    local walk = "walk"
-    e.stat = idle
+  local idle = "idle"
+  local walk = "walk"
+  local mordisco = "mordisco"
+  e.stat = idle
 
-    local velfreson = 1.25
+  local velfreson = 1.25
 
-	e.upd = function()
-		e.stat = idle
-		e.dx = 0
-		e.dy = 0
+  e.upd = function()
+    if (e.mord_time > 0) then
+      e.stat = mordisco
+      e.mord_time -= 1
+    elseif (e.mord_time == 0) then
+      e.mord_time = -1
+      deli(mordiscos, 1)
+    else
+      e.stat = idle
+    end
+    e.dx = 0
+    e.dy = 0
 
-		if btn(⬅️) then
-			e.fh = false
-			e.stat = walk
-			e.dx = -velfreson
-		end
-
-        if btn(➡️) then
-            e.fh = true
-            e.stat = walk
-            e.dx = velfreson
-        end
-
-		if btn(⬆️) then
-			e.stat = walk
-			e.dy = -velfreson
-		end
-
-		if btn(⬇️) then
-			e.stat = walk
-			e.dy = velfreson
-		end
-
-		-- Verificar colisiones antes de mover
-		if not hay_colision(e.x + e.dx, e.y + e.h / 2 , e.w, e.h / 2) then
-			e.x += e.dx
-		end
-		if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
-			e.y += e.dy
-		end
-
-		if btnp(❎) and #ladridos < 1 then
-			make_ladrido()
-		end
-	end
-
-    e.drw = function()
-        local sps = e.fr[e.stat]
-        e.s += .30
-
-        if flr(e.s) > #sps then
-            e.s = 1
-        end
-        --fondo transparente
-        palt(0, false)
-        palt(11, true)
-        --dibujar freson
-        spr(sps[flr(e.s)], e.x, e.y, 2, 2, e.fh)
-        rect(e.x, e.y + e.h / 2, e.x + e.w, e.y + e.h, 0)
-        palt()
+    if btnp(🅾️) and #ladridos < 1 and e.stat != mordisco then
+      e.stat = mordisco
+      e.s = 1
+      e.mord_time = 10
+      make_mordisco(e.x, e.y, e.w, e.h)
     end
 
-    return e
+    if btn(⬅️) and e.stat != mordisco then
+      e.fh = false
+      e.stat = walk
+      e.dx = -velfreson
+    end
+
+    if btn(➡️) and e.stat != mordisco then
+      e.fh = true
+      e.stat = walk
+      e.dx = velfreson
+    end
+
+    if btn(⬆️) and e.stat != mordisco then
+      e.stat = walk
+      e.dy = -velfreson
+    end
+
+    if btn(⬇️) and e.stat != mordisco then
+      e.stat = walk
+      e.dy = velfreson
+    end
+
+    -- verificar colisiones antes de mover
+    if not hay_colision(e.x + e.dx, e.y + e.h / 2, e.w, e.h / 2) then
+      e.x += e.dx
+    end
+    if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
+      e.y += e.dy
+    end
+
+    if btnp(❎) and #ladridos < 1 and e.stat != mordisco then
+      make_ladrido(e.x, e.y)
+    end
+  end
+
+  e.drw = function()
+    local sps = e.fr[e.stat]
+    if e.stat == walk or e.stat == idle then
+      e.s += .3
+    else
+      e.s += .2
+    end
+
+    if flr(e.s) > #sps then
+      e.s = 1
+    end
+
+    palt(0, false)
+    palt(11, true)
+    --dibujar freson
+    if (e.stat == idle or e.stat == walk) then
+      spr(sps[flr(e.s)], e.x, e.y, 2, 2, e.fh)
+    else
+      if (e.fh == true) then
+        spr(sps[flr(e.s)], e.x + 6, e.y, 2, 2, e.fh)
+      else
+        spr(sps[flr(e.s)], e.x - 6, e.y, 2, 2, e.fh)
+      end
+    end
+    --rect(e.x + 2, e.y + e.h / 2, e.x + e.w - 4, e.y + e.h, 0)
+    palt()
+  end
+
+  return e
 end
 
 function make_cofre(x, y, screen_x, screen_y, llave_id)
@@ -489,205 +546,252 @@ function obtener_pantalla_actual_y()
 end
 
 -- funcion para crear un ladrido (ondas concentricas)
-function make_ladrido()
-    hambre -= 5
-    local l = {}
-    -- radio del circulo exterior
-    l.r1 = 5
-    -- radio del circulo interior
-    l.r2 = 3
-    add(ladridos, l)
+function make_ladrido(x, y)
+  hambre -= 5
+  local l = {}
+  l.x = x
+  -- posicion del ladrido
+  l.y = y
+  l.r1 = 5
+  -- radio del circulo exterior
+  l.r2 = 3
+  -- radio del circulo interior
+  add(ladridos, l)
+end
+
+function make_mordisco(x, y, w, h)
+  hambre -= 10
+  local m = {}
+  m.x = x
+  m.y = y
+  m.w = w
+  m.h = h
+  add(mordiscos, m)
 end
 
 -- chorro
-function make_chorro()
-	local e = make_entity(0, 0)
-	e.s = 33
-	e.fh = false
-	e.fr = {
-		walk = { 33 },
-		idle = { 33 }
-	}
+function make_chorro(x, y)
+  local e = make_entity(x, y)
+  e.name = "chorro"
+  e.s = 1
+  e.fh = false
+  e.fr = {
+    walk = { 35, 37 },
+    idle = { 33 }
+  }
+  e.stun = 30
+  e.w = 8
+  e.h = 14
 
-    local idle = "idle"
-    local walk = "walk"
-    e.stat = idle
+  local idle = "idle"
+  local walk = "walk"
+  e.stat = walk
 
-    local velchorro = 1.5
+  local velchorro = 0.5
 
-    e.upd = function()
-        if (e.stat != "idle") then
-            e.stat = walk
-            if (e.x < jug.x) e.dx -= velchorro if (e.x > jug.x) e.dx += velchorro if (e.y > jug.y) e.dy -= velchorro if (e.y < jug.y) e.dy += velchorro e.x += e.dx
+  e.upd = function()
+    if (e.x >= camx and e.x <= camx + 127 and e.y >= camy and e.y <= camy + 127) then
+      if (e.stat != idle) then
+        e.stat = walk
+        if (e.x < flr(jug.x)) then
+          --printh("der_e.x: "..e.x.." jug.x: "..jug.x)
+          e.fh = true
+          --printh("der_e.dx: "..e.dx)
+          e.dx = velchorro
+          --printh("der_e.dx2: "..e.dx)
+        end
+        if (e.x > flr(jug.x)) then
+          --printh("izq_e.x: "..e.x.." jug.x: "..jug.x)
+          e.fh = false
+          --printh("izq_e.dx: "..e.dx)
+          e.dx = -velchorro
+          --printh("izq_e.dx2: "..e.dx)
+        end
+        if (e.y > flr(jug.y)) then
+          e.dy = -velchorro
+        end
+        if (e.y < flr(jug.y)) then
+          e.dy = velchorro
+        end
+        if (jug.stat == "mordisco") then
+          if colision_mordisco(e.x, e.y, e.w, e.h) then
+            e.stat = idle
+            e.stun = 60
+          end
+        end
+
+        -- checkeo doble por si cambia estado dentro de if
+        if (e.stat != idle) then
+          -- verificar colisiones antes de mover
+          if not hay_colision(e.x + e.dx, e.y + e.h / 2, e.w / 2, e.h / 2) then
+            e.x += e.dx
+          end
+          if not hay_colision(e.x, e.y + e.h / 2 + e.dy, e.w, e.h / 2) then
             e.y += e.dy
-        elseif (stun > 0) then
-            stun -= 1
+          end
         end
+      elseif (e.stun > 0) then
+        e.stun -= 1
+      elseif (e.stun == 0) then
+        e.stat = walk
+      end
 
-        for l in all(ladridos) do
-            if dist(jug.x, jug.y, e.x, e.y, l.r2) then
-                e.stat = idle
-                stun = 30
-            end
+      for l in all(ladridos) do
+        if dist(l.x + jug.w / 2, l.y + jug.h / 2, e.x, e.y, l.r1) then
+          e.stat = idle
+          e.stun = 30
         end
+      end
     end
+  end
 
-    e.drw = function()
-        local sps = e.fr[e.stat]
-        e.s += .15
+  e.drw = function()
+    if (e.x >= camx and e.x <= camx + 127 and e.y >= camy and e.y <= camy + 127) then
+      local sps = e.fr[e.stat]
+      e.s += .1
 
-        if flr(e.s) > #sps then
-            e.s = 1
-        end
-        --fondo transparente
-        palt(0, false)
-        palt(11, true)
-        --dibujar chorro
-        spr(
-            sps[flr(e.s)],
-            e.x + 78,
-            e.y,
-            2, 2,
-            e.fh
-        )
-        palt()
+      if flr(e.s) > #sps then
+        e.s = 1
+      end
+      --dibujar chorro
+      palt(0, false)
+      palt(11, true)
+      spr(
+        sps[flr(e.s)],
+        e.x,
+        e.y,
+        2, 2,
+        e.fh
+      )
+      palt()
     end
+  end
 
-    return e
+  return e
 end
 
 -->8
 -- capas
 function ini_bosque()
-    arboles = {}
-    piedras = {}
+  arboles = {}
+  parts = {}
 
-    for i = 1, 10 do
-        add(
-            arboles, {
-                x = flr(rnd(128)),
-                y = flr(rnd(128)),
-                c = 27
-            }
-        )
-    end
+  for i = 1, 10 do
+    add(
+      parts, {
+        x = flr(rnd(128)),
+        y = flr(rnd(128)),
+        c = 11
+      }
+    )
+  end
 
-    for i = 1, 10 do
-        add(
-            piedras, {
-                x = flr(rnd(128)),
-                y = flr(rnd(128)),
-                c = 43
-            }
-        )
-    end
+  for i = 1, 10 do
+    add(
+      parts, {
+        x = flr(rnd(128)),
+        y = flr(rnd(128)),
+        c = 13
+      }
+    )
+  end
+
+  for i = 1, 10 do
+    add(
+      parts, {
+        x = flr(rnd(128)),
+        y = flr(rnd(128)),
+        c = 5
+      }
+    )
+  end
+
+  for j = 0, 120, 8 do
+    add(
+      arboles, {
+        x = flr(rnd(128)),
+        y = flr(rnd(j)) - 8,
+        s = 71
+      }
+    )
+  end
 end
 
 function drw_bosque()
-    for a in all(arboles) do
-        a.y += a.c - 4.5
+  cls(3)
 
-        if (a.y > 140) then
-            a.y = -1
-            a.x = flr(rnd(128))
-        end
+  for p in all(parts) do
+    p.y += p.c - 8
+
+    if (p.y > 140) then
+      p.y = -1
+      p.x = flr(rnd(128))
     end
 
-    for p in all(piedras) do
-        p.y += p.c - 4.5
+    pset(p.x, p.y, p.c)
+  end
 
-        if (p.y > 140) then
-            p.y = -1
-            p.x = flr(rnd(128))
-        end
+  for a in all(arboles) do
+    a.y += .5
+
+    if (a.y >= 128) then
+      a.y = -8
+      a.x = flr(rnd(120))
     end
+    palt(0, false)
+    palt(11, true)
+    spr(a.s, a.x, a.y)
+    palt()
+  end
 end
 -->8
 -- enemigos
 function ini_enemigos(num)
-    enes = {}
+  enes = {}
+  make_enemy(1)
 end
 
 function make_enemy(num)
-    local e = make_entity()
-    local upd = e.upd
+  local e = make_chorro(camx + flr(rnd(72) + 24), camy + flr(rnd(72) + 24))
 
-    e.name = "chorro"
-    e.s = 33
-    e.fh = false
-    e.fr = {
-        walk = { 33 },
-        idle = { 33 }
-    }
+  add(enes, e)
 
-    local idle = "idle"
-    local walk = "walk"
-
-    local velchorro = 1.5
-
-    e.upd = function()
-        e.stat = idle
-    end
-
-    e.drw = function()
-        local sps = e.fr[e.stat]
-        e.s += .15
-
-        if flr(e.s) > #sps then
-            e.s = 33
-        end
-        --fondo transparente
-        palt(0, false)
-        palt(11, true)
-        --dibujar chorro
-        spr(
-            sps[flr(e.s)],
-            e.x + 78,
-            e.y,
-            2, 2,
-            e.fh
-        )
-        palt()
-    end
-
-    add(enes, e)
-
-    return e
+  return e
 end
 
 __gfx__
-00000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbffffff9bb666bbbbbbbbbbbbb666bbbbbbbbbbbbb666b000000000000000000000000000000000000000000000000000000000000000000000000
-00700700bb494444494bbff6bbffffff9bbbbffbbffffff9bbbbbff6000000000000000000000000000000000000000000000000000000000000000000000000
-00077000b994ffff449bbbfbb494444494bbbbf4494444494bbbbbff000000000000000000000000000000000000000000000000000000000000000000000000
-00077000bf990ff0999bbffbb94ffff449fbbff994ffff449ffbbffb000000000000000000000000000000000000000000000000000000000000000000000000
-00700700bf4949949f666f49b990ff0999666f49990ff09996666f4b000000000000000000000000000000000000000000000000000000000000000000000000
-00000000b9f990099f64444fb4949949f64444444949949f6444444f000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bb4f4444ff44444fbf990099f644444ff990099f6444444f000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bb66f9fff4444449b4f4444ff44444444f4444ff4444444400000000000000000000000000000000bbb33bbb00000000000000000000000000000000
-00000000bbb444444444444bbb6f9fff4444444bb6f9fff44444444f00000000000000000000000000000000bb3333bb00000000000000000000000000000000
-00000000bbb544444444444bbb44444444544449b94444444444444900000000000000000000000000000000b333333b00000000000000000000000000000000
-00000000bbb5444445544449bb44444445b5444bbb4444444554444b000000000000000000000000000000003333333300000000000000000000000000000000
-00000000bbb445445b554449b444bb445bbb444bbbb444545b55445b000000000000000000000000000000003333333300000000000000000000000000000000
-00000000bbb4554bbbb54544b44bb44bbbbb4b44bbbb4bb4bbb4bb4b000000000000000000000000000000003333333300000000000000000000000000000000
-00000000bbb4bb4bbbbb4b54b45bd4bbbbbd6bb9bbbb44b44bd6b44b00000000000000000000000000000000b334433b00000000000000000000000000000000
-00000000bbddb99bbb669b5994bbbbbbbbbbbbbbbbbbb9bb5bbbb9bb00000000000000000000000000000000bbb44bbb00000000000000000000000000000000
-00000000bbbbbbbbbbbbbbbb0000000000000000000000000000000000000000000000000000000000000000bbb66bbb00000000000000000000000000000000
-00000000bb222222bbbbbbbb0000000000000000000000000000000000000000000000000000000000000000b666666bb0000000000000000000000000000000
-00000000b222e22222bbbbbb000000000000000000000000000000000000000000000000000000000000000066666666b0000000000000000000000000000000
-00000000b8e880e2e2bbbbbb000000000000000000000000000000000000000000000000000000000000000066666666b0000000000000000000000000000000
-00000000bf77ff77f2bbbbbb00000000000000000000000000000000000000000000000000000000000000006666666bb0000000000000000000000000000000
-00000000bf07ff07f2bbbbbb0000000000000000000000000000000000000000000000000000000000000000666666bbb0000000000000000000000000000000
-00000000bbfffffff2bbbbbb0000000000000000000000000000000000000000000000000000000000000000b6666bbbb0000000000000000000000000000000
-00000000bbff000f22bbbbbb0000000000000000000000000000000000000000000000000000000000000000bbb66bbb00000000000000000000000000000000
-00000000bbbffff22bbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbb2222bbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbf222fbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbb22f2bbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbbdbbdbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbb50b50bbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbbbbbbbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbbbbbbbbbbbbbb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb0000000000000000000000000000000000000000
+00000000bbbffffff9bb666bbbbbbbbbbbbb666bbbbbbbbbbbbb666bbffff9bbbbbb666bbffff9bbbbbb666b0000000000000000000000000000000000000000
+00700700bb494444494bbff6bbffffff9bbbbffbbffffff9bbbbbff649994949bbbbbffb49994949bbbbbffb0000000000000000000000000000000000000000
+00077000b994ffff449bbbfbb494444494bbbbf4494444494bbbbbff4f0f99496bbbbbfb4f0f99496bbbbbfb0000000000000000000000000000000000000000
+00077000bf990ff0999bbffbb94ffff449fbbff994ffff449ffbbffbff4949f466bbbffbff4949f466bbbffb0000000000000000000000000000000000000000
+00700700bf4949949f666f49b990ff0999666f49990ff09996666f4bb777f9f444666f49b444f9f444666f490000000000000000000000000000000000000000
+00000000b9f990099f64444fb4949949f64444444949949f6444444fbbbb9ff444444444b7774ff4444444440000000000000000000000000000000000000000
+00000000bb4f4444ff44444fbf990099f644444ff990099f6444444fbbee9f944464444fb4449f944464444f0000000000000000000000000000000000000000
+00000000bb66f9fff4444449b4f4444ff44444444f4444ff44444444eee4f99466444444bf9ff994664444440000000000000000000000000000000000000000
+00000000bbb444444444444bbb6f9fff4444444bb6f9fff44444444fb44f99444444444bbf9999444444444b0000000000000000000000000000000000000000
+00000000bbb544444444444bbb44444444544449b944444444444449bf99444444444445bfff4444444444450000000000000000000000000000000000000000
+00000000bbb5444445544449bb44444445b5444bbb4444444554444bbb44444445544449bb444444455444490000000000000000000000000000000000000000
+00000000bbb445445b554449b444bb445bbb444bbbb444545b55445bbbb444545b55445bbbb444545b55445b0000000000000000000000000000000000000000
+00000000bbb4554bbbb54544b44bb44bbbbb4b44bbbb4bb4bbb4bb4bbbbb4bb4bbb4bb4bbbbb4bb4bbb4bb4b0000000000000000000000000000000000000000
+00000000bbb4bb4bbbbb4b54b45bd4bbbbbd6bb9bbbb44b44bd6b44bbbbb44b44bd6b44bbbbb44b44bd6b44b0000000000000000000000000000000000000000
+00000000bbddb99bbb669b5994bbbbbbbbbbbbbbbbbbb9bb5bbbb9bbbbbbb9bb5bbbb9bbbbbbb9bb5bbbb9bb0000000000000000000000000000000000000000
+00000000bbbb1111111bbbbbbbbb1111111bbbbbbbbb1111111bbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbb116666611bbbbbbb116666611bbbbbbb116666611bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bb6666666661bbbbbb6666666661bbbbbb6666666661bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000b666666f66f1bbbbb666556f55f1bbbbb666556f55f1bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbf55ff55f1bbbbbbbf07ff07f1bbbbbbbf07ff07f1bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbfcfffccf1bbbbbbbffffffff1bbbbbbbffffffff1bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbff000f11bbbbbbbbff000f11bbbbbbbbff000f11bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbbfffe11bbbbbbbbbbffff11bbbbbbbbbbffff11bbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbb1161115bbbbbbbbb116115bbbbbbbbbb116115bbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbb11681155bbbbbbbf1161f55bbbbbbbbf1161555bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbb11611f55bbbbbbfb11615f5bbbbbbbbb116f555bbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbb81111f5bbbbbbbbb111155fbbbbbbbbb11f155bbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbbf3333fbbbbbbbbbb3333bbbbbbbbbbbb3f33bbbbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbbb3bb3bbbbbbbbbb33bb33bbbbbbbbbbb3333bbbbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbbb3bb3bbbbbbbbbb3bbbb3bbbbbbbbbbbb3b3bbbbbbb000000000000000000000000000000000000000000000000000000000000000000000000
+00000000bbbbb50b50bbbbbbbbb50bbb50bbbbbbbbbbb5500bbbbbbb000000000000000000000000000000000000000000000000000000000000000000000000
 bbbbbbbbbbbbbbbbbb3bbbb3aaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbb00bbbbbbbb3cccc3bbbbbbbbbbbbbbbbbbbbb11111111666666661111111166661111
 bbbbbbbbbbbbbbbbbbb3bb3baaaaa99abbb00bbbbbb00bbbbbb00bbbbb0550bbbbb3bc3cc3c33bbbbb555555555555bb16666661666666666661111166661161
 bbbbbbbbbbbb3bbbbbb3bb3baaa9aa9abb0bb0bbbb0770bbbb0770bbbb0330bbbbbb3b3cc333bbbbb557aaaaaaaaa55b11111111666666666666611166661161
@@ -720,38 +824,38 @@ b6bbbbbb666bbbbb8808808888808888880888086677116111111111008008000050050000500500
 666615556666155b88088088888088888888880877777161166666660088880000888800008888000088880000555500005555000b0aaa000000000000000000
 666611116666111b8808808888808888880888086677116116666666000880000008800000088000000880000008800000055000bbba00000000000000000000
 666616656666166b88088088888088888880008866771111166666660000000000000000000000000000000000000000000000000b0aaaa00000000000000000
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaaaaaa5555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaaaa55777755aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaaaaf77777745aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaa54ffff77ff45aaaaaaaaaaa9999a9aaaa9aaa9a9a999a999a9999a0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaa5444fffff445aaaaaaaaaaa9aaaa9aaaa9aaa9aaa9a9aaa9a9aaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaa55f411ffff419f55aaaaaaaaa999aa9aaaa9aaa9a9a9a9aaa9a999aa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaa59ff1ffffffff1ff95aaaaaaaa9aaaa9aaaaa9a9aa9a999a9a9a9aaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaa59911ffffffffffff11145aaaaaa9999a999aaaa9aaa9a9a9a999a9999a0000000000000000000000000000000000000000000000000000000000000000
-aaaaa4997711999999999177514aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaa5591424449999994ff54412f5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaa59919419999999994991441f45aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaa999141799449ff944997121ff4aaaaaaaaaaaaaaa999aa9999aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aa599411949044444444f944111ff5aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-a54f449949f4994449fffffff41ff5aaaaaaaaaaaaaa9aa9a999aaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-a599199994f944ffff44ff4f4111f4aaaaaaaaaaaaaa9aa9a9aaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-a5919ff749f4704444070ff40979145aaaaaaaaaaaaa999aa9999aaaaa9aaaaa0000000000000000000000000000000000000000000000000000000000000000
-a591f7777ff0009779000ff77799145aaaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaa0000000000000000000000000000000000000000000000000000000000000000
-a541ff7704446f7777f644407779145aaaaaaaaaaaaaaaaaaaaaaaaa9aaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-a5419977499f9701c07979947779145aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-a5424677774f7700057774777704245aa9999a999aa9999aa999a9999a9aaa9a0000000000000000000000000000000000000000000000000000000000000000
-aa541997740f777777777047709145aaa9aaaa9aa9a9aaaa9aaaa9aa9a99aa9a0000000000000000000000000000000000000000000000000000000000000000
-aa544599ff0f77715777f0fff9444aaaa9aaaa9aa9a9aaaa9aaaa9aa9a999a9a0000000000000000000000000000000000000000000000000000000000000000
-aaa44219ff40ff01c0fff4ff91144aaaa999aa999aa999aaa999a9aa9a9a999a0000000000000000000000000000000000000000000000000000000000000000
-aaa544419ff40006d0004ff454445aaaa9aaaa9aa9a9aaaaaaa9a9aa9a9aa99a0000000000000000000000000000000000000000000000000000000000000000
-aaaa544499ff44444444ffff2445aaaaa9aaaa9aa9a9999a9999a9999a9aaa9a0000000000000000000000000000000000000000000000000000000000000000
-aaaaa54411ffff4ff4fffff1442aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaa5544115fffffffff124455aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaa54441ffffffff14445aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaa544411ffff1244425aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaa5544524444555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaaaa0000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaaa00555500aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaaa0557777550aaaaaaaaaaa000000000aa0000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa00f777777450aaaaaaaaaa099909000aa0900090909990999099900000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaa054ffff77ff450aaaaaaaaa090009000aa0900090009090009090000000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaa005444fffff44500aaaaaaaa090009000aa0900090909090009090000000000000000000000000000000000000000000000000000000000000000000
+aaaaaaa055f411ffff419f550aaaaaaa099009000aa0900090909090009099000000000000000000000000000000000000000000000000000000000000000000
+aaaaa0059ff1ffffffff1ff9500aaaaa090009000aa0090900909990909090000000000000000000000000000000000000000000000000000000000000000000
+aaaa059911ffffffffffff111450aaaa099909990aa0009000909090999099900000000000000000000000000000000000000000000000000000000000000000
+aaa0049977119999999991775140aaaa000000000aa0000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+aa05591424449999994ff54412f50aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aa059919419999999994991441f450aaaaaaaaaaaaa0000000000aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aa0999141799449ff944997121ff40aaaaaaaaaaaaa0999009990aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+a0599411949044444444f944111ff50aaaaaaaaaaaa0900909000aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+054f449949f4994449fffffff41ff50aaaaaaaaaaaa0900909900aaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+0599199994f944ffff44ff4f4111f40aaaaaaaaaaaa0900909000aaaaa00aaaa0000000000000000000000000000000000000000000000000000000000000000
+05919ff749f4704444070ff409791450aaaaaaaaaaa0999009990aaaa090aaaa0000000000000000000000000000000000000000000000000000000000000000
+0591f7777ff0009779000ff777991450aaaaaaaaaaa0000000000aaa090aaaaa0000000000000000000000000000000000000000000000000000000000000000
+0541ff7704446f7777f6444077791450aaaaaaaaaaaaaaaaaaaaaaa090aaaaaa0000000000000000000000000000000000000000000000000000000000000000
+05419977499f9701c079799477791450000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+05424677774f77000577747777042450099990999009999099990999909000900000000000000000000000000000000000000000000000000000000000000000
+a0541997740f7777777770477091450a090000900909000090000900909900900000000000000000000000000000000000000000000000000000000000000000
+a0544599ff0f77715777f0fff94440aa090000900909000090000900909990900000000000000000000000000000000000000000000000000000000000000000
+aa044219ff40ff01c0fff4ff911440aa099900999009990099990900909090900000000000000000000000000000000000000000000000000000000000000000
+aa0544419ff40006d0004ff4544450aa090000900909000000090900909099900000000000000000000000000000000000000000000000000000000000000000
+aaa0544499ff44444444ffff24450aaa090000900909000000090900909009900000000000000000000000000000000000000000000000000000000000000000
+aaaa054411ffff4ff4fffff14420aaaa090000900909999099990999909000900000000000000000000000000000000000000000000000000000000000000000
+aaaa05544115fffffffff1244550aaaa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+aaaaa0054441ffffffff1444500aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaa0544411ffff12444250aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaa00554452444455500aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
+aaaaaaaaaa0000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000
 6669966600666666009999999999999999999900666666665555555566666600555555556666666644444444000ee00088888888008888888888880011111111
 6669966600666666009999999999999999999900666666665555555566666600666666666666666644444444000ee00088888888008888888888880011111111
 6009900600666666009999999999999999999900666666366666666666666600666666666666666644444444000ee00088888888008888888888880011111111
@@ -768,6 +872,8 @@ cccccccccccccc0000cccccc42244424999444240000000000000000000000000000000000000000
 cccccccccccccc0000cccccc42244424422444240000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 cccccccccccccc0000cccccc42244424422444240000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 cccccccccccccc0000cccccc42244424422444240000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
